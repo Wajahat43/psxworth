@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Download, Smartphone, X } from "lucide-react";
 
 type PWAInstallAnnouncementProps = {
@@ -19,21 +20,23 @@ export const PWAInstallAnnouncement = ({ onInstall, onDismiss }: PWAInstallAnnou
     </div>
 
     <div className="flex items-center space-x-3 ml-4">
-      <button
+      <Button
         onClick={onInstall}
-        className="bg-white/90 hover:bg-white text-gray-900 font-medium py-1.5 px-3 rounded-md text-sm transition-all duration-200 hover:scale-105 flex items-center space-x-2"
+        className="bg-white/90 hover:bg-white text-gray-900 font-medium py-1.5 px-3 text-sm flex items-center gap-2 hover:scale-105 transition-all duration-200"
       >
         <Download className="h-4 w-4" />
         <span>Install</span>
-      </button>
+      </Button>
 
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={onDismiss}
-        className="text-gray-100/80 hover:text-gray-100 hover:bg-white/10 rounded-md p-1 transition-colors duration-200"
         aria-label="Close banner"
+        className="text-gray-100/80 hover:text-gray-100 hover:bg-white/10"
       >
         <X className="h-5 w-5" />
-      </button>
+      </Button>
     </div>
   </div>
 );

@@ -47,48 +47,54 @@ export function TransactionTypeSelector<TFieldValues extends FieldValues>({
   return (
     <div className="bg-muted/50 rounded-lg mb-2 mt-2 border border-border/50">
       <div className="grid grid-cols-3 gap-1 relative">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setValue("type" as Path<TFieldValues>, "buy" as any)}
           className={cn(
-            "relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+            "!relative !h-auto !px-3 !py-2 !rounded-md !text-sm !font-medium transition-all duration-200",
             transactionType === "buy"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              ? "!text-foreground hover:!bg-transparent"
+              : "!text-muted-foreground hover:!text-foreground hover:!bg-muted/50"
           )}
           disabled={isEditing}
         >
           {transactionType === "buy" && getLayoutAnimationContainer()}
+
           <span className="relative z-10 flex items-center justify-center gap-2">Buy</span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setValue("type" as Path<TFieldValues>, "sell" as any)}
           className={cn(
-            "relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+            "!relative !h-auto !px-3 !py-2 !rounded-md !text-sm !font-medium transition-all duration-200",
             transactionType === "sell"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              ? "!text-foreground hover:!bg-transparent"
+              : "!text-muted-foreground hover:!text-foreground hover:!bg-muted/50"
           )}
           disabled={isEditing}
         >
           {transactionType === "sell" && getLayoutAnimationContainer()}
+
           <span className="relative z-10 flex items-center justify-center gap-2">Sell</span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setValue("type" as Path<TFieldValues>, "dividend" as any)}
           className={cn(
-            "relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+            "!relative !h-auto !px-3 !py-2 !rounded-md !text-sm !font-medium transition-all duration-200",
             transactionType === "dividend"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              ? "!text-foreground hover:!bg-transparent"
+              : "!text-muted-foreground hover:!text-foreground hover:!bg-muted/50"
           )}
           disabled={isEditing}
         >
           {transactionType === "dividend" && getLayoutAnimationContainer()}
+
           <span className="relative z-10 flex items-center justify-center gap-2">Dividend</span>
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -256,26 +262,32 @@ export function CommissionInput<
           />
         </FormControl>
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center bg-slate-900/50 rounded-lg p-1 border border-slate-700/50">
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => toggleField.onChange(false)}
             className={cn(
-              "px-2 py-1 rounded-md text-xs font-medium transition-all duration-200",
-              !isPercentage ? "bg-slate-700 text-slate-100 shadow-sm" : "text-slate-400 hover:text-slate-200"
+              "!h-auto !px-2 !py-1 !rounded-md !text-xs !font-medium transition-all duration-200",
+              !isPercentage
+                ? "!bg-slate-700 !text-slate-100 shadow-sm hover:!bg-slate-700"
+                : "!text-slate-400 hover:!text-slate-200 hover:!bg-transparent"
             )}
           >
             PKR
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => toggleField.onChange(true)}
             className={cn(
-              "px-3 py-1 rounded-md text-xs font-medium transition-all duration-200",
-              isPercentage ? "bg-slate-700 text-slate-100 shadow-sm" : "text-slate-400 hover:text-slate-200"
+              "!h-auto !px-3 !py-1 !rounded-md !text-xs !font-medium transition-all duration-200",
+              isPercentage
+                ? "!bg-slate-700 !text-slate-100 shadow-sm hover:!bg-slate-700"
+                : "!text-slate-400 hover:!text-slate-200 hover:!bg-transparent"
             )}
           >
             %
-          </button>
+          </Button>
         </div>
       </div>
     </FormItem>

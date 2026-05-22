@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import React from "react";
 
@@ -16,13 +17,9 @@ export const UpcomingPayoutsError: React.FC<Props> = ({ message = "Failed to loa
       <div className="flex items-center justify-between gap-3">
         <div className="text-muted-foreground">{message}</div>
         {onRetry ? (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="px-2.5 py-1.5 rounded-md border border-border bg-secondary text-foreground hover:opacity-90 transition"
-          >
+          <Button type="button" variant="secondary" onClick={onRetry} className="px-2.5 py-1.5 text-sm">
             Retry
-          </button>
+          </Button>
         ) : null}
       </div>
     </motion.div>

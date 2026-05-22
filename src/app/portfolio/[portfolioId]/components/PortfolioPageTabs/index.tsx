@@ -4,6 +4,7 @@ import { SidebarTrigger } from "@/components/animate-ui/components/radix/sidebar
 import { AllocationPerformance, UpcomingPayouts } from "@/components/organisms";
 import { ImportTransactions } from "@/components/organisms/ImportTransactions/ImportTransactions";
 import HideOnScroll from "@/components/ui/HideOnScroll";
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StockDetailedPerformance } from "@/interfaces";
@@ -40,7 +41,8 @@ export function PortfolioPageTabs(props: PortfolioPageTabsProps) {
   const transactionsRef = useRef<HTMLDivElement | null>(null);
 
   const holdingsFilter = useHoldingsFilter(portfolioId);
-  const filteredPerformance = portfolioPerformance?.filter((stock) => matchesHoldingsFilter(stock, holdingsFilter)) || [];
+  const filteredPerformance =
+    portfolioPerformance?.filter((stock) => matchesHoldingsFilter(stock, holdingsFilter)) || [];
 
   const symbols = filteredPerformance.map((s) => s.stockSymbol);
   const symbolToShares = Object.fromEntries(filteredPerformance.map((s) => [s.stockSymbol, s.totalShares]));
@@ -184,13 +186,14 @@ export function PortfolioPageTabs(props: PortfolioPageTabsProps) {
       <HideOnScroll visible={isFabVisible} className="fixed right-4 bottom-4 z-30 md:hidden">
         <Popover>
           <PopoverTrigger asChild>
-            <button
+            <Button
               type="button"
               aria-label="Open transaction actions"
-              className="flex h-12 w-12 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-lg transition-transform duration-200 active:scale-95"
+              size="icon"
+              className="!h-12 !w-12 !rounded-full border border-primary/40 !bg-primary !text-primary-foreground shadow-lg transition-transform duration-200 active:scale-95 hover:!bg-primary"
             >
               <Plus className="h-5 w-5" />
-            </button>
+            </Button>
           </PopoverTrigger>
           <PopoverContent align="end" side="top" className="w-56 border-sidebar-border/70 bg-sidebar p-2">
             <div className="flex flex-col gap-2">
