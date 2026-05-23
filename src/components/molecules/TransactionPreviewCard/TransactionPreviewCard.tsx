@@ -52,33 +52,22 @@ export function TransactionPreviewCard({
     control,
     watch,
     formState: { errors },
-    trigger,
     clearErrors,
   } = hookForm;
 
   const watchedTransaction = watch();
 
-  //Trigger form validation manually because our transaction can have invalid fields.
-  useEffect(() => {
-    trigger(); // Validates all fields
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (watchedTransaction.transactionDate) {
-      trigger("transactionDate");
-    }
-  }, [watchedTransaction.transactionDate, trigger]);
-
   /**
-   * Re-validate stock symbol field when it changes to clear persistent errors
+   * Clear stock symbol errors when it changes to avoid persistent errors
    */
   useEffect(() => {
     if (watchedTransaction.stockSymbol) {
+      // Clear previous symbol errors when user selects/enters a symbol.
+      // Avoid forcing validation here to prevent overlapping trigger races —
+      // rely on user-driven validation (mode: "onBlur") to re-validate the field.
       clearErrors("stockSymbol");
-      trigger("stockSymbol");
     }
-  }, [watchedTransaction.stockSymbol, clearErrors, trigger]);
+    }, [watchedTransaction.stockSymbol, clearErrors]);
 
   /**
    * Give the updated transaction to the parent component. It can then use this for example, for checking
