@@ -61,13 +61,10 @@ export function TransactionPreviewCard({
    * Clear stock symbol errors when it changes to avoid persistent errors
    */
   useEffect(() => {
-    if (watchedTransaction.stockSymbol) {
-      // Clear previous symbol errors when user selects/enters a symbol.
-      // Avoid forcing validation here to prevent overlapping trigger races —
-      // rely on user-driven validation (mode: "onBlur") to re-validate the field.
-      clearErrors("stockSymbol");
-    }
-    }, [watchedTransaction.stockSymbol, clearErrors]);
+    // Clear previous symbol errors whenever symbol value changes,
+    // including when it becomes empty, to avoid stale errors.
+    clearErrors("stockSymbol");
+  }, [watchedTransaction.stockSymbol, clearErrors]);
 
   /**
    * Give the updated transaction to the parent component. It can then use this for example, for checking
