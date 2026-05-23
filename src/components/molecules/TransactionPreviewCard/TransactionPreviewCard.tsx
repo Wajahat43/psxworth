@@ -52,19 +52,9 @@ export function TransactionPreviewCard({
     control,
     watch,
     formState: { errors },
-    clearErrors,
   } = hookForm;
 
   const watchedTransaction = watch();
-
-  /**
-   * Clear stock symbol errors whenever the value changes (including emptying the field)
-   * to avoid stale/persistent errors caused by overlapping programmatic validations.
-   * Rely on user-driven validation (`mode: "onBlur"`) to perform actual validation.
-   */
-  useEffect(() => {
-    clearErrors("stockSymbol");
-  }, [watchedTransaction.stockSymbol, clearErrors]);
 
   /**
    * Give the updated transaction to the parent component. It can then use this for example, for checking
