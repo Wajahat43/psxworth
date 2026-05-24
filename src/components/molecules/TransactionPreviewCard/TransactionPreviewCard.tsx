@@ -51,10 +51,10 @@ export function TransactionPreviewCard({
   const {
     control,
     watch,
-    formState: { errors },
   } = hookForm;
 
   const watchedTransaction = watch();
+  const validationResult = transactionSchema.safeParse(watchedTransaction);
 
   /**
    * Give the updated transaction to the parent component. It can then use this for example, for checking
@@ -65,8 +65,7 @@ export function TransactionPreviewCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(watchedTransaction)]);
 
-  const validationErrors = Object.keys(errors).length;
-  const isValid = !validationErrors;
+  const isValid = validationResult.success;
 
   return (
     <FormProvider {...hookForm}>
