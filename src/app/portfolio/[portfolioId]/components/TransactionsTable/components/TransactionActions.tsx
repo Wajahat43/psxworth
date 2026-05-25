@@ -27,6 +27,7 @@ export const TransactionActions = (props: TransactionActionsProps) => {
       <Button
         type="button"
         size="icon"
+        aria-label="Edit transaction"
         onClick={handleEdit}
         className="!h-8 !w-8 !rounded-full !bg-slate-700/50 hover:!bg-blue-500/30 transition-colors !ring-1 !ring-slate-600/50 hover:!ring-blue-500/70"
       >
@@ -40,17 +41,16 @@ export const TransactionActions = (props: TransactionActionsProps) => {
         holdDuration={700}
         trigger={
           <Button
-            asChild
+            type="button"
             size="icon"
+            aria-label="Delete transaction"
             className="!h-8 !w-8 !rounded-full !bg-slate-700/50 hover:!bg-red-500/30 transition-colors !ring-1 !ring-slate-600/50 hover:!ring-red-500/70"
           >
-            <span>
-              {deleteTransaction.isPending ? (
-                <SpinningLoader size="xxs" color="red" />
-              ) : (
-                <Trash2 size={14} className="text-slate-300" />
-              )}
-            </span>
+            {deleteTransaction.isPending ? (
+              <SpinningLoader size="xxs" color="red" />
+            ) : (
+              <Trash2 size={14} className="text-slate-300" />
+            )}
           </Button>
         }
       />
