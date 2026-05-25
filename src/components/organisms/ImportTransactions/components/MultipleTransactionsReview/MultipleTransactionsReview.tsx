@@ -113,15 +113,15 @@ export function MultipleTransactionsReview({ transactions, onPrevious, onClose }
     hasTransactions && reviewTransactions.every(({ reviewId }) => submittedTransactions.has(reviewId));
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
           <h3 className="text-lg font-semibold text-slate-100">Transaction Review</h3>
           <p className="text-sm text-slate-400">Review your transactions and complete any missing information</p>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 overflow-y-auto max-h-[55vh] -mx-2 px-2">
         {!hasTransactions && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <FileX className="h-12 w-12 text-slate-500 mb-4" />
@@ -152,9 +152,7 @@ export function MultipleTransactionsReview({ transactions, onPrevious, onClose }
         ))}
       </div>
 
-      <div className="h-px bg-slate-700" />
-
-      <div className="flex justify-between items-center gap-2">
+      <div className="flex justify-between items-center gap-2 flex-shrink-0 border-t border-slate-700 pt-4">
         <Button
           variant="outline"
           onClick={allSubmitted && onClose ? onClose : onPrevious}
