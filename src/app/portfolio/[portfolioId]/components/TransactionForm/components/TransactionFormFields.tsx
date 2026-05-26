@@ -47,54 +47,51 @@ export function TransactionTypeSelector<TFieldValues extends FieldValues>({
   return (
     <div className="bg-muted/50 rounded-lg mb-2 mt-2 border border-border/50">
       <div className="grid grid-cols-3 gap-1 relative">
-        <Button
+        <button
           type="button"
-          variant="ghost"
           onClick={() => setValue("type" as Path<TFieldValues>, "buy" as any)}
           className={cn(
-            "!relative !h-auto !px-3 !py-2 !rounded-md !text-sm !font-medium transition-all duration-200",
+            "relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
             transactionType === "buy"
-              ? "!text-foreground hover:!bg-transparent"
-              : "!text-muted-foreground hover:!text-foreground hover:!bg-muted/50"
+              ? "text-foreground hover:bg-transparent"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
           disabled={isEditing}
         >
           {transactionType === "buy" && getLayoutAnimationContainer()}
 
           <span className="relative z-10 flex items-center justify-center gap-2">Buy</span>
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          variant="ghost"
           onClick={() => setValue("type" as Path<TFieldValues>, "sell" as any)}
           className={cn(
-            "!relative !h-auto !px-3 !py-2 !rounded-md !text-sm !font-medium transition-all duration-200",
+            "relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
             transactionType === "sell"
-              ? "!text-foreground hover:!bg-transparent"
-              : "!text-muted-foreground hover:!text-foreground hover:!bg-muted/50"
+              ? "text-foreground hover:bg-transparent"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
           disabled={isEditing}
         >
           {transactionType === "sell" && getLayoutAnimationContainer()}
 
           <span className="relative z-10 flex items-center justify-center gap-2">Sell</span>
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          variant="ghost"
           onClick={() => setValue("type" as Path<TFieldValues>, "dividend" as any)}
           className={cn(
-            "!relative !h-auto !px-3 !py-2 !rounded-md !text-sm !font-medium transition-all duration-200",
+            "relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
             transactionType === "dividend"
-              ? "!text-foreground hover:!bg-transparent"
-              : "!text-muted-foreground hover:!text-foreground hover:!bg-muted/50"
+              ? "text-foreground hover:bg-transparent"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
           disabled={isEditing}
         >
           {transactionType === "dividend" && getLayoutAnimationContainer()}
 
           <span className="relative z-10 flex items-center justify-center gap-2">Dividend</span>
-        </Button>
+        </button>
       </div>
     </div>
   );

@@ -45,7 +45,7 @@ export const CustomToast = (props: CustomToastProps) => {
           variant="ghost"
           size="icon"
           onClick={() => toast.dismiss(id)}
-          className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-gray-100/70"
+          className="!w-6 !h-6 rounded-full bg-white/10 hover:bg-white/20 text-gray-100/70"
         >
           <X className="w-4 h-4" />
         </Button>
