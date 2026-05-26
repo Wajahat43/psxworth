@@ -262,8 +262,9 @@ export function CommissionInput<
           <button
             type="button"
             onClick={() => toggleField.onChange(false)}
+            aria-label="Commission in PKR"
             className={cn(
-              "transition-all duration-200 text-xs font-medium px-2 py-1 rounded-md",
+              "transition-all duration-200 text-xs font-medium px-3 py-1 rounded-md",
               !isPercentage ? "bg-slate-700 text-slate-100 shadow-sm" : "text-slate-400 hover:text-slate-200"
             )}
           >
@@ -271,6 +272,7 @@ export function CommissionInput<
           </button>
           <button
             type="button"
+            aria-label="Commission in percentage"
             onClick={() => toggleField.onChange(true)}
             className={cn(
               "transition-all duration-200 text-xs font-medium px-3 py-1 rounded-md",
