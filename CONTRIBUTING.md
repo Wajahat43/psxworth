@@ -33,7 +33,18 @@ Don't see your bug or feature listed? **Open a new issue** describing it. For bu
    ```
 6. **Make your changes** and commit with a clear message
 7. **Push to your fork** and open a PR targeting the `develop` branch
-8. **Link the issue** in your PR description using `Closes #<issue-number>`
+8. **Link the issue** in your PR description so it auto-closes when the PR is merged
+
+   **Correct format:**
+   ```
+   Closes #6
+   ```
+   **Common mistakes that will NOT auto-close the issue:**
+   ```
+   Closes # 6     ← space before the number
+   Closes # [6]   ← brackets around the number
+   Close #6       ← missing the 's'
+   ```
 
 ## Branch Naming
 
@@ -55,8 +66,9 @@ For where to put new code (and where not to), see [docs/architecture.md](docs/ar
 - Run these before opening a PR:
   ```bash
   pnpm lint
-  pnpm build
+  pnpm lint:types
   ```
+  > `pnpm lint` catches code style issues. `pnpm lint:types` runs the TypeScript compiler and catches type errors. Note: `pnpm dev` does **not** type-check — a bug that works in dev can still fail the build.
 - Don't open a PR without being assigned to the issue first
 
 ## Questions?
