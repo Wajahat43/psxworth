@@ -45,7 +45,7 @@ export const MobileMenu = () => {
     <div className="md:hidden">
       <Button
         onClick={toggleMenu}
-        className="flex h-10 w-10 flex-col items-center justify-center  focus:outline-none"
+        className="flex h-10 w-10 flex-col items-center justify-center space-y-1.5 focus:outline-none"
         aria-label="Toggle mobile menu"
         variant="ghost"
         size="icon"

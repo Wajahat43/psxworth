@@ -259,32 +259,26 @@ export function CommissionInput<
           />
         </FormControl>
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center bg-slate-900/50 rounded-lg p-1 border border-slate-700/50">
-          <Button
+          <button
             type="button"
-            variant="ghost"
             onClick={() => toggleField.onChange(false)}
             className={cn(
-              "!h-auto !px-2 !py-1 !rounded-md !text-xs !font-medium transition-all duration-200",
-              !isPercentage
-                ? "!bg-slate-700 !text-slate-100 shadow-sm hover:!bg-slate-700"
-                : "!text-slate-400 hover:!text-slate-200 hover:!bg-transparent"
+              "transition-all duration-200 text-xs font-medium px-2 py-1 rounded-md",
+              !isPercentage ? "bg-slate-700 text-slate-100 shadow-sm" : "text-slate-400 hover:text-slate-200"
             )}
           >
             PKR
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
-            variant="ghost"
             onClick={() => toggleField.onChange(true)}
             className={cn(
-              "!h-auto !px-3 !py-1 !rounded-md !text-xs !font-medium transition-all duration-200",
-              isPercentage
-                ? "!bg-slate-700 !text-slate-100 shadow-sm hover:!bg-slate-700"
-                : "!text-slate-400 hover:!text-slate-200 hover:!bg-transparent"
+              "transition-all duration-200 text-xs font-medium px-3 py-1 rounded-md",
+              isPercentage ? "bg-slate-700 text-slate-100 shadow-sm" : "text-slate-400 hover:text-slate-200"
             )}
           >
             %
-          </Button>
+          </button>
         </div>
       </div>
     </FormItem>

@@ -44,6 +44,7 @@ export const CustomToast = (props: CustomToastProps) => {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Dismiss toast"
           onClick={() => toast.dismiss(id)}
           className="!w-6 !h-6 rounded-full bg-white/10 hover:bg-white/20 text-gray-100/70"
         >
