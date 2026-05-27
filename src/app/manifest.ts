@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "PsxWorth Free",
     description: "Free PSX stock portfolio tracker with no ads to track and manage your investments on any device",
     start_url: "/",
-    orientation: "any",
+    orientation: "portrait",
     display: "standalone",
     display_override: ["window-controls-overlay", "standalone", "minimal-ui"],
     icons: [

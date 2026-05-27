@@ -136,3 +136,21 @@ jobs:
             POSTHOG_PERSONAL_API_KEY=${{ env.POSTHOG_PERSONAL_API_KEY }}
             USER_DATABASE_URL=${{ env.USER_DATABASE_URL }}
             DATA_DATABASE_URL=${{ env.DATA_DATABASE_URL }}
+
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    needs: [lint-and-types, build, docker-build]
+    if: always()
+    steps:
+      - name: Verify required checks passed
+        run: |
+          if [[ "${{ needs.lint-and-types.result }}" != "success" || "${{ needs.build.result }}" != "success" ]]; then
+            echo "Required lint/build checks failed."
+            exit 1
+          fi
+          # Docker only runs for same-repo PRs; skipped is OK for fork PRs.
+          if [[ "${{ needs.docker-build.result }}" != "success" && "${{ needs.docker-build.result }}" != "skipped" ]]; then
+            echo "Docker build failed."
+            exit 1
+          fi
