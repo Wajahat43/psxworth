@@ -15,7 +15,7 @@ import { Transaction, TransactionSchemaType } from "@/types";
 import { MULTIPLE_TRANSACTIONS_CREATED, TRANSACTION_CREATED, TRANSACTION_DELETED } from "@/utils/posthog/events";
 import { generateObject } from "ai";
 import "dotenv/config";
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq, and, inArray, count } from "drizzle-orm";
 import { unstable_cache, updateTag } from "next/cache";
 import { createResponse } from "../utils";
 import { requireAuth, withPortfolioOwnership, withErrorHandling } from "../utils/middleware";
@@ -107,34 +107,84 @@ export const parseRawTransactions = withErrorHandling(async (rawTransactions: st
   throw new Error("Transactions Couldn't be parsed properly. Please check if your data is valid.");
 });
 
-const getTransactionsUncached = async (userId: string, portfolioId: number) => {
+const getTransactionsUncached = async (
+  userId: string,
+  portfolioId: number,
+  page: number = 1,
+  pageSize: number = 20,
+  filters?: { types?: ("buy" | "sell" | "dividend")[], symbols?: string[] },
+  sorting?: { key: string; order: string } | null
+) => {
   await withPortfolioOwnership(portfolioId, userId);
-  const transactions = await db
-    .select()
-    .from(transactionTable)
-    .where(eq(transactionTable.portfolioId, portfolioId))
-    .orderBy(asc(transactionTable.transactionDate), asc(transactionTable.type));
+  const offset = Math.max(0, (page - 1) * pageSize);
 
-  return transactions;
+  const whereClause = and(
+    eq(transactionTable.portfolioId, portfolioId),
+    filters?.types && filters.types.length > 0 ? inArray(transactionTable.type, filters.types) : undefined,
+    filters?.symbols && filters.symbols.length > 0 ? inArray(transactionTable.stockSymbol, filters.symbols) : undefined,
+  );
+
+  const orderByClause =
+    sorting?.key && sorting.key in transactionTable
+      ? sorting.order === "desc"
+        ? [desc(transactionTable[sorting.key as keyof typeof transactionTable] as any)]
+        : [asc(transactionTable[sorting.key as keyof typeof transactionTable] as any)]
+      : [asc(transactionTable.transactionDate), asc(transactionTable.type)];
+
+  const [transactions, totalCountResult] = await Promise.all([
+    db
+      .select()
+      .from(transactionTable)
+      .where(whereClause)
+      .orderBy(...orderByClause)
+      .limit(pageSize)
+      .offset(offset),
+    db
+      .select({ count: count() })
+      .from(transactionTable)
+      .where(whereClause),
+  ]);
+
+  return {
+    items: transactions,
+    totalCount: Number(totalCountResult[0].count),
+  };
 };
 
-export const getTransactions = withErrorHandling(async (portfolioId: number) => {
-  const userId = await requireAuth();
-  await withPortfolioOwnership(portfolioId, userId);
+export const getTransactions = withErrorHandling(
+  async (
+    portfolioId: number,
+    page: number = 1,
+    pageSize: number = 20,
+    filters?: { types?: ("buy" | "sell" | "dividend")[]; symbols?: string[] },
+    sorting?: { key: string; order: string } | null
+  ) => {
+    
 
-  const transactions = await unstable_cache(
-    async () => {
-      return await getTransactionsUncached(userId, portfolioId);
-    },
-    [`${userId}-${portfolioId}-transactions`],
-    {
-      tags: [`${userId}-${portfolioId}-transactions`],
-      revalidate: 60 * 60, //Revalidate after 1 hour.
-    }
-  )();
+    const userId = await requireAuth();
+    await withPortfolioOwnership(portfolioId, userId);
+    const filterKey = JSON.stringify(filters || {});
+    const sortKey = JSON.stringify(sorting || {});
+    const result = await unstable_cache(
+      async () => {
+        return await getTransactionsUncached(userId, portfolioId, page, pageSize, filters, sorting);
+      },
+      [`${userId}-${portfolioId}-transactions-page-${page}-size-${pageSize}-filters-${filterKey}-sorting-${sortKey}`],
+      {
+        tags: [`${userId}-${portfolioId}-transactions`],
+        revalidate: 60 * 60, //Revalidate after 1 hour.
+      }
+    )();
 
-  return transactions;
-});
+    return {
+      items: result.items,
+      totalCount: result.totalCount,
+      page,
+      pageSize,
+      totalPages: Math.ceil(result.totalCount / pageSize)
+    };
+  }
+);
 
 export const editTransaction = withErrorHandling(
   async (transactionId: number, updatedTransactionData: TransactionSchemaType) => {

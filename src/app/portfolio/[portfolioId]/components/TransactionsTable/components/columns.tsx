@@ -136,6 +136,7 @@ export const getTransactionsTableDesktopColumns = (
 
       return <div className={getProfitLossColorClass(changePct)}>{formatSignedPercentage(changePct)}</div>;
     },
+     enableSorting: false,
   },
   {
     accessorKey: "totalValue",
@@ -145,6 +146,7 @@ export const getTransactionsTableDesktopColumns = (
       const totalValue = calculateTotalValue(row.original);
       return <div>{formatCurrency(totalValue)}</div>;
     },
+    enableSorting: false, 
   },
   {
     accessorKey: "commissionAndTaxes",
@@ -154,6 +156,7 @@ export const getTransactionsTableDesktopColumns = (
       const value = calculateCommissionAndTaxes(row.original);
       return value ? <div>{formatCurrency(value)}</div> : <div>-</div>;
     },
+    enableSorting: false, 
   },
   {
     id: "actions",
