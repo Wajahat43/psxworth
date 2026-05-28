@@ -27,6 +27,8 @@ import {
 } from "../components/TransactionFormFields";
 import { TransactionSubmitButton } from "../components/TransactionSubmitButton";
 import { TransactionSummary } from "../components/TransactionSummary";
+import { useDividendSharesAutoFill } from "@/utils/hooks/useDividendSharesAutoFill";
+import { useEffect } from "react";
 
 interface TransactionFormProps {
   onSuccess?: () => void;
@@ -40,7 +42,7 @@ export default function TransactionForm(props: TransactionFormProps) {
 
   const { onSuccess, portfolioId, editTransaction, editTransactionId } = props;
 
-  const { createTransaction, updateTransaction } = useTransactions(portfolioId);
+  const { createTransaction, updateTransaction, transactions } = useTransactions(portfolioId);
 
   // Get the appropriate schema and type based on transaction type
   const editTransactionType = editTransaction?.type || "buy";
@@ -91,6 +93,23 @@ export default function TransactionForm(props: TransactionFormProps) {
       });
     }
   };
+  
+
+  const stockSymbol = form.watch("stockSymbol");
+
+  const autoFilledShares = useDividendSharesAutoFill(
+    stockSymbol,
+    isDividend,
+    transactions.data ?? []
+  );
+
+  useEffect(() => {
+    // Only auto-fill for new transactions, not edits
+    if (autoFilledShares !== null && !editTransaction) {
+      form.setValue("numberOfShares", autoFilledShares);
+    }
+  }, [autoFilledShares, editTransaction, form]);
+
 
   return (
     <Form {...form}>
