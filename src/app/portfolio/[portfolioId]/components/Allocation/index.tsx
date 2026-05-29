@@ -1,6 +1,7 @@
 "use client";
 
 import { STOCKS_INFO } from "@/utils/constants/stockSymbols";
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { AllocationChart } from "./components/AllocationChart";
 import { AllocationHeader } from "./components/AllocationHeader";
@@ -37,8 +38,12 @@ export const AllocationPage = ({ stocks }: AllocationProps) => {
           </div>
         )}
         {error && (
-          <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-            Could not load ETF allocation details. Existing allocations are still shown; you can retry or collapse ETFs.
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p className="flex-1">
+              Could not load ETF allocation details. Existing allocations are still shown; you can retry or collapse
+              ETFs.
+            </p>
           </div>
         )}
         {data.length > 0 ? (

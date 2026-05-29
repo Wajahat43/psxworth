@@ -1,4 +1,7 @@
+import { ErrorState } from "@/components/molecules/ErrorState";
+import { Button } from "@/components/ui/button";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   robots: {
@@ -9,10 +12,16 @@ export const metadata: Metadata = {
 
 export default function Blocked() {
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <h1 className="text-4xl font-bold">Access blocked. </h1>
-      <h3 className="text-2xl font-bold">You have been rate limited. Please try again after some time</h3>
-      <p className="text-lg">Please try again later.</p>
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <ErrorState
+        title="Access temporarily blocked"
+        description="You have been rate limited. Please try again after some time."
+        action={
+          <Button asChild>
+            <Link href="/portfolio">Back to portfolio</Link>
+          </Button>
+        }
+      />
     </div>
   );
 }
