@@ -14,7 +14,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-10">
       <ErrorState
         title="Portfolio error"
-        description={error.message || "Please try again later."}
+        description="We couldn't load this portfolio. Please try again later."
         action={
           <Button onClick={reset} variant="destructive">
             Try again
