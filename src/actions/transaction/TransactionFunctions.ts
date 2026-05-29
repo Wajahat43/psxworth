@@ -124,11 +124,22 @@ const getTransactionsUncached = async (
     filters?.symbols && filters.symbols.length > 0 ? inArray(transactionTable.stockSymbol, filters.symbols) : undefined,
   );
 
+  const sortableColumns = {
+    transactionDate: transactionTable.transactionDate,
+    type: transactionTable.type,
+    stockSymbol: transactionTable.stockSymbol,
+    numberOfShares: transactionTable.numberOfShares,
+    pricePerShare: transactionTable.pricePerShare,
+    commissionAndTaxes: transactionTable.commissionAndTaxes,
+  } as const;
+
+  const sortColumn = sorting?.key ? sortableColumns[sorting.key as keyof typeof sortableColumns] : undefined;
+
   const orderByClause =
-    sorting?.key && sorting.key in transactionTable
-      ? sorting.order === "desc"
-        ? [desc(transactionTable[sorting.key as keyof typeof transactionTable] as any)]
-        : [asc(transactionTable[sorting.key as keyof typeof transactionTable] as any)]
+    sortColumn
+      ? sorting?.order === "desc"
+        ? [desc(sortColumn)]
+        : [asc(sortColumn)]
       : [asc(transactionTable.transactionDate), asc(transactionTable.type)];
 
   const [transactions, totalCountResult,availableSymbols] = await Promise.all([
