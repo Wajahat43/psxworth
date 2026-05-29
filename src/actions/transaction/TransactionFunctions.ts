@@ -159,7 +159,10 @@ export const getTransactions = withErrorHandling(
     filters?: { types?: ("buy" | "sell" | "dividend")[]; symbols?: string[] },
     sorting?: { key: string; order: string } | null
   ) => {
-    
+    page = Math.max(1, page ?? 1);
+    pageSize = [10, 20, 40, 50].includes(pageSize)
+      ? pageSize
+      : 10;
 
     const userId = await requireAuth();
     await withPortfolioOwnership(portfolioId, userId);

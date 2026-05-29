@@ -37,6 +37,14 @@ interface TransactionFilters {
   symbols?: string[];
 }
 
+
+interface pageState {
+  page: number,
+  pageSize: number
+
+}
+
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -44,13 +52,13 @@ interface DataTableProps<TData, TValue> {
   shouldShowMobileLayout?: boolean;
   onToggleView?: (fullTable: boolean) => void;
   renderMobileSubRow?: (original: TData) => React.ReactNode;
-  pageState: any;
-  setPageState?: any;
-  totalPages?: number;
-  filters?: TransactionFilters;
-  setFilters?: any;
-  sorting?: { key: string; order: string } | null;
-  setSorting?: any;
+  pageState: pageState;
+  setPageState: (value: pageState) => void;
+  totalPages: number;
+  filters: TransactionFilters;
+  setFilters: (value: TransactionFilters) => void;
+  sorting: { key: string; order: "asc" | "desc" } | null;
+  setSorting: (value: { key: string; order: "asc" | "desc" } | null) => void
 }
 
 
