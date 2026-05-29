@@ -20,7 +20,7 @@ interface StockSelectProps<TFieldValues extends FieldValues> {
 export function StockSelect<TFieldValues extends FieldValues>({ field }: StockSelectProps<TFieldValues>) {
   "use no memo";
   const { error } = useFormField();
-  const { clearErrors, formState, getFieldState } = useFormContext<TFieldValues>();
+  const { clearErrors } = useFormContext<TFieldValues>();
 
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -34,9 +34,7 @@ export function StockSelect<TFieldValues extends FieldValues>({ field }: StockSe
       );
 
   const handleSelect = (stockSymbol: string) => {
-    const fieldState = getFieldState(field.name, formState);
-
-    if (error || fieldState.isDirty || fieldState.isTouched) {
+    if (error) {
       clearErrors(field.name as Path<TFieldValues>);
     }
 
