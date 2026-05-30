@@ -131,7 +131,7 @@ const getTransactionsUncached = async (
         : [asc(transactionTable[sorting.key as keyof typeof transactionTable] as any)]
       : [asc(transactionTable.transactionDate), asc(transactionTable.type)];
 
-  const [transactions, totalCountResult] = await Promise.all([
+  const [transactions, totalCountResult,availableSymbols] = await Promise.all([
     db
       .select()
       .from(transactionTable)
@@ -143,11 +143,17 @@ const getTransactionsUncached = async (
       .select({ count: count() })
       .from(transactionTable)
       .where(whereClause),
+  db
+  .selectDistinct({ stockSymbol: transactionTable.stockSymbol })
+  .from(transactionTable)
+  .where(eq(transactionTable.portfolioId, portfolioId))
+
   ]);
 
   return {
     items: transactions,
     totalCount: Number(totalCountResult[0].count),
+    availableSymbols
   };
 };
 
@@ -184,7 +190,8 @@ export const getTransactions = withErrorHandling(
       totalCount: result.totalCount,
       page,
       pageSize,
-      totalPages: Math.ceil(result.totalCount / pageSize)
+      totalPages: Math.ceil(result.totalCount / pageSize),
+      availableSymbols:result.availableSymbols
     };
   }
 );

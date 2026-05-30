@@ -33,6 +33,9 @@ export const useTransactions = (
           page: number;
           pageSize: number;
           totalPages: number;
+          availableSymbols:{stockSymbol:string}[]
+
+          
         };
       }
       throw new Error(result.message);

@@ -39,11 +39,10 @@ export const TransactionsTable = (props: TransactionsTableProps) => {
   });
 
   const [filters, setFilters] = React.useState<TransactionFilters>({});
-  const [sorting, setSorting] = React.useState<{ key: string; order: string } | null>(null);
+  const [sorting, setSorting] = React.useState<{ key: string, order: "asc" | "desc" } | null>(null);
 
   const { transactions } = useTransactions(portfolioId, pageState.page, pageState.pageSize, filters, sorting);
-  const totalPages = transactions?.data?.totalPages;
-
+  const totalPages = transactions?.data?.totalPages ?? 0;
   const pricesQuery = useQuery({
     ...stockPriceQueries.latestAll(),
     select: (data) => {
@@ -104,6 +103,8 @@ export const TransactionsTable = (props: TransactionsTableProps) => {
         setFilters={setFilters}
         sorting={sorting}
         setSorting={setSorting}
+        availableSymbols={transactions.data?.availableSymbols ?? []}
+
       />
     </>
   );

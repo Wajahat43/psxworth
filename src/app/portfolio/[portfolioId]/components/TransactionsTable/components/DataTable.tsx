@@ -57,8 +57,10 @@ interface DataTableProps<TData, TValue> {
   totalPages: number;
   filters: TransactionFilters;
   setFilters: (value: TransactionFilters) => void;
-  sorting: { key: string; order: "asc" | "desc" } | null;
-  setSorting: (value: { key: string; order: "asc" | "desc" } | null) => void
+  sorting: { key: string, order: "asc" | "desc" } | null;
+  setSorting: (value: { key: string, order: "asc" | "desc" } | null) => void
+  availableSymbols: { stockSymbol: string }[]
+
 }
 
 
@@ -72,7 +74,7 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
   "use no memo";
 
 
-  const { sorting, setSorting, setFilters, filters, pageState, setPageState, totalPages, columns, data, isLoading = false, shouldShowMobileLayout, onToggleView, renderMobileSubRow } = props as any;
+  const { availableSymbols, sorting, setSorting, setFilters, filters, pageState, setPageState, totalPages, columns, data, isLoading = false, shouldShowMobileLayout, onToggleView, renderMobileSubRow } = props as any;
 
 
   /* eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable() returns functions that cannot be memoized safely */
@@ -112,10 +114,13 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
       <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-700">
         <div className="shrink-0 rounded-t-lg border-b border-slate-700 bg-slate-800 px-2 py-2">
           <div className="flex flex-wrap items-center justify-start md:justify-end gap-2 w-full md:w-auto">
-            <DataTableFilters data={data as Transaction[]} onFilterChange={(newFilters: any) => {
-              setFilters(newFilters);
-              setPageState((prev: any) => ({ ...prev, page: 1 }));
-            }} activeFilters={filters} />
+            <DataTableFilters
+              data={data as Transaction[]}
+              availableSymbols={availableSymbols?.map((val: { stockSymbol: string }) => val.stockSymbol)}
+              onFilterChange={(newFilters: any) => {
+                setFilters(newFilters);
+                setPageState((prev: any) => ({ ...prev, page: 1 }));
+              }} activeFilters={filters} />
             {shouldShowMobileLayout !== undefined && onToggleView ? (
               <TableViewToggle
                 shouldShowMobileLayout={shouldShowMobileLayout}
