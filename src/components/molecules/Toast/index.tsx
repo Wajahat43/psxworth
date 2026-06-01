@@ -32,7 +32,7 @@ export function toast(toast: Omit<ToastProps, "id">) {
 
 const CustomToast = (props: ToastProps) => {
   const { type, title, description, id } = props;
-  const config = toastConfig[type || "success"];
+  const config = toastConfig[type || "default"];
   return <CustomToastComponent id={id} title={title} description={description} config={config} type={type} />;
 };
 

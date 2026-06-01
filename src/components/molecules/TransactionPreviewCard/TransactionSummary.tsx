@@ -26,6 +26,19 @@ const displayValue = (fieldName: string, value: any, formatter?: (value: any) =>
   return <>{formatter ? formatter(value) : String(value)}</>;
 };
 
+const displaySharesValue = (value: unknown) => {
+  if (value === undefined || value === null || value === "") {
+    return <span className="text-red-500">MISSING Number of Shares</span>;
+  }
+
+  const sharesValue = Number(value);
+  if (!Number.isFinite(sharesValue) || sharesValue <= 0) {
+    return <span className="text-red-500">{String(value)}</span>;
+  }
+
+  return <>{String(value)}</>;
+};
+
 interface TransactionSummaryProps {
   transaction: TransactionSchemaType;
 }
@@ -58,7 +71,7 @@ export const TransactionSummary: React.FC<TransactionSummaryProps> = ({ transact
     const totalValue = pricePerShare * numberOfShares + totalCommission;
     return (
       <p className="text-sm text-muted-foreground mt-2">
-        Buy {displayValue("Number of Shares", numberOfShares)} shares of {displayStockSymbol(stockSymbol)} at{" "}
+        Buy {displaySharesValue(numberOfShares)} shares of {displayStockSymbol(stockSymbol)} at{" "}
         {displayValue("Price per Share", pricePerShare, formatCurrency)} with{" "}
         {isCommissionPercentage && commissionAndTaxes
           ? formatPercentage(commissionAndTaxes)
@@ -71,7 +84,7 @@ export const TransactionSummary: React.FC<TransactionSummaryProps> = ({ transact
     const totalValue = pricePerShare * numberOfShares - totalCommission;
     return (
       <p className="text-sm text-muted-foreground mt-2">
-        Sell {displayValue("Number of Shares", numberOfShares)} shares of {displayStockSymbol(stockSymbol)}
+        Sell {displaySharesValue(numberOfShares)} shares of {displayStockSymbol(stockSymbol)}
         {pricePerShare ? <> at {displayValue("Price per Share", pricePerShare, formatCurrency)}</> : ""} with{" "}
         {isCommissionPercentage && commissionAndTaxes
           ? formatPercentage(commissionAndTaxes)
@@ -86,7 +99,11 @@ export const TransactionSummary: React.FC<TransactionSummaryProps> = ({ transact
       <p className="text-sm text-muted-foreground mt-2">
         Received {displayValue("Dividend per Share", dividendPerShare, formatCurrency)} dividend per share for{" "}
         {displayStockSymbol(stockSymbol)}
-        {numberOfShares ? <> ({displayValue("Number of Shares", numberOfShares)} shares)</> : ""} with{" "}
+        {numberOfShares !== undefined && numberOfShares !== null && String(numberOfShares).trim() !== "" ? (
+          <> ({displaySharesValue(numberOfShares)} shares)</>
+        ) : (
+          ""
+        )} with{" "}
         {isCommissionPercentage && commissionAndTaxes
           ? formatPercentage(commissionAndTaxes)
           : formatCurrency(totalCommission)}{" "}
