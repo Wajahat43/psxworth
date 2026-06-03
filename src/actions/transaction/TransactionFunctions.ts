@@ -207,6 +207,26 @@ export const getTransactions = withErrorHandling(
   }
 );
 
+
+export const getAllTransactions = withErrorHandling(
+  async (
+    portfolioId: number,
+  ) => {
+    const userId = await requireAuth();
+    await withPortfolioOwnership(portfolioId, userId);
+const result = await db
+  .select()
+  .from(transactionTable)
+  .where(eq(transactionTable.portfolioId, portfolioId))
+  .orderBy(asc(transactionTable.transactionDate), asc(transactionTable.type));
+    return {
+      items: result,
+    };
+  }
+);
+
+
+
 export const editTransaction = withErrorHandling(
   async (transactionId: number, updatedTransactionData: TransactionSchemaType) => {
     const userId = await requireAuth();

@@ -59,7 +59,8 @@ interface DataTableProps<TData, TValue> {
   setFilters: (value: TransactionFilters) => void;
   sorting: { key: string, order: "asc" | "desc" } | null;
   setSorting: (value: { key: string, order: "asc" | "desc" } | null) => void
-  availableSymbols: { stockSymbol: string }[]
+  availableSymbols: { stockSymbol: string }[],
+  totalCount:number
 
 }
 
@@ -74,7 +75,7 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
   "use no memo";
 
 
-  const { availableSymbols, sorting, setSorting, setFilters, filters, pageState, setPageState, totalPages, columns, data, isLoading = false, shouldShowMobileLayout, onToggleView, renderMobileSubRow } = props as any;
+  const { totalCount,availableSymbols, sorting, setSorting, setFilters, filters, pageState, setPageState, totalPages, columns, data, isLoading = false, shouldShowMobileLayout, onToggleView, renderMobileSubRow } = props as any;
 
 
   /* eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable() returns functions that cannot be memoized safely */
@@ -131,6 +132,7 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
             <TableToggleColumns table={table} className="ml-0 bg-slate-700 border-slate-600 hover:bg-slate-600" />
             <ExportTransactionsButton
               transactions={data as Transaction[]}
+              totalCount={totalCount}
               currentViewTransactions={currentViewTransactions}
               currentViewFilters={filters}
               disabled={isLoading}

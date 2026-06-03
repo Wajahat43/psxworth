@@ -43,6 +43,7 @@ export const TransactionsTable = (props: TransactionsTableProps) => {
 
   const { transactions } = useTransactions(portfolioId, pageState.page, pageState.pageSize, filters, sorting);
   const totalPages = transactions?.data?.totalPages ?? 0;
+  const totalCount=transactions?.data?.totalCount ?? 0
   const pricesQuery = useQuery({
     ...stockPriceQueries.latestAll(),
     select: (data) => {
@@ -102,6 +103,7 @@ export const TransactionsTable = (props: TransactionsTableProps) => {
         filters={filters}
         setFilters={setFilters}
         sorting={sorting}
+        totalCount={totalCount}
         setSorting={setSorting}
         availableSymbols={transactions.data?.availableSymbols ?? []}
 

@@ -6,6 +6,7 @@ import {
   deleteTransaction,
   editTransaction,
   getTransactions,
+  getAllTransactions
 } from "@/actions/transaction/TransactionFunctions";
 import { historicalReturnsQueries } from "@/features/historicalReturns/queries";
 import { toast } from "@/components/molecules/Toast";
@@ -42,6 +43,20 @@ export const useTransactions = (
     },
     enabled: !!portfolioId,
     staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh for 5 minutes
+  });
+
+  const AllTransactions = useQuery({
+    queryKey: ["transactions", portfolioId,"all"],
+    queryFn: async () => {
+      const result = await getAllTransactions(portfolioId);
+      if (result.success) {
+        return result.data as unknown as {
+          items: Transaction[]  
+        };
+      }
+      throw new Error(result.message);
+    },
+    enabled: false,
   });
 
   const invalidateQueries = () => {
@@ -116,6 +131,7 @@ export const useTransactions = (
   });
 
   return {
+    AllTransactions,
     transactions,
     createTransaction: createTransactionMutation,
     createMultipleTransactions: createMultipleTransactionsMutation,
