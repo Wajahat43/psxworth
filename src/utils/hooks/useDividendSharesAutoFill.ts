@@ -24,30 +24,36 @@ export function useDividendSharesAutoFill(
   const [autoFilledShares, setAutoFilledShares] = useState<number | null>(null);
 
   useEffect(() => {
-  async function calculate() {
-    // Handle the null case INSIDE the async function
-    if (!isDividend || !symbol) {
-      setAutoFilledShares(null);
-      return;
+    let cancelled = false;
+
+    async function calculate() {
+      if (!isDividend || !symbol) {
+        setAutoFilledShares(null);
+        return;
+      }
+
+      const result = await getMostRecentDividendPayoutForSymbol(symbol);
+      if (cancelled) return; // discard stale response
+
+      const payoutData = result && 'success' in result && result.success
+        ? (result.data as { symbol: string; exDate: string | Date; actionType: string } | null)
+        : null;
+      const exDate = payoutData?.exDate ? new Date(payoutData.exDate) : null;
+
+      if (exDate) {
+        const eligible = calculateHoldingsAsOf(transactions, symbol, exDate);
+        if (!cancelled) setAutoFilledShares(eligible >= 0 ? eligible : null);
+      } else {
+        const current = calculateHoldingsAsOf(transactions, symbol, new Date());
+        if (!cancelled) setAutoFilledShares(current > 0 ? current : null);
+      }
     }
 
-    const result = await getMostRecentDividendPayoutForSymbol(symbol);
-    const payoutData = result && 'success' in result && result.success
-      ? (result.data as { symbol: string; exDate: string | Date; actionType: string } | null)
-      : null;
-    const exDate = payoutData?.exDate ? new Date(payoutData.exDate) : null;
+    calculate();
 
-    if (exDate) {
-      const eligible = calculateHoldingsAsOf(transactions, symbol, exDate);
-      setAutoFilledShares(eligible >= 0 ? eligible : null);
-    } else {
-      const current = calculateHoldingsAsOf(transactions, symbol, new Date());
-      setAutoFilledShares(current > 0 ? current : null);
-    }
-  }
+    return () => { cancelled = true; }; 
 
-  calculate();
-}, [symbol, isDividend, transactions]);
+  }, [symbol, isDividend, transactions]);
 
   return autoFilledShares;
 }
