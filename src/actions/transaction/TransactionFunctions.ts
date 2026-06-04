@@ -138,8 +138,8 @@ const getTransactionsUncached = async (
   const orderByClause =
     sortColumn
       ? sorting?.order === "desc"
-        ? [desc(sortColumn)]
-        : [asc(sortColumn)]
+        ? [desc(sortColumn),asc(transactionTable.id)]
+        : [asc(sortColumn),asc(transactionTable.id)]
       : [asc(transactionTable.transactionDate), asc(transactionTable.type)];
 
   const [transactions, totalCountResult,availableSymbols] = await Promise.all([
@@ -172,7 +172,7 @@ export const getTransactions = withErrorHandling(
   async (
     portfolioId: number,
     page: number = 1,
-    pageSize: number = 20,
+    pageSize: number = 10,
     filters?: { types?: ("buy" | "sell" | "dividend")[]; symbols?: string[] },
     sorting?: { key: string; order: string } | null
   ) => {
