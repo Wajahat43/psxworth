@@ -110,16 +110,16 @@ useEffect(() => {
 }, [stockSymbol, isDividend]);
 
 useEffect(() => {
-  if (editTransaction) return;
+  if (editTransaction || !isDividend) return;
 
   if (!hasUserEdited.current) {
     if (autoFilledShares !== null) {
-      form.setValue("numberOfShares", autoFilledShares);
+      form.setValue("numberOfShares", autoFilledShares, { shouldDirty: false });
     } else {
-      form.setValue("numberOfShares", 0);
+      form.setValue("numberOfShares", 0, { shouldDirty: false });
     }
   }
-}, [autoFilledShares, editTransaction, form]);
+}, [autoFilledShares, editTransaction, isDividend, form]);
 
   return (
     <Form {...form}>
