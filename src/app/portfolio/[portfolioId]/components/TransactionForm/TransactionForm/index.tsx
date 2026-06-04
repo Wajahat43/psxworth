@@ -28,7 +28,7 @@ import {
 import { TransactionSubmitButton } from "../components/TransactionSubmitButton";
 import { TransactionSummary } from "../components/TransactionSummary";
 import { useDividendSharesAutoFill } from "@/utils/hooks/useDividendSharesAutoFill";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface TransactionFormProps {
   onSuccess?: () => void;
@@ -97,19 +97,29 @@ export default function TransactionForm(props: TransactionFormProps) {
 
   const stockSymbol = form.watch("stockSymbol");
 
-  const autoFilledShares = useDividendSharesAutoFill(
-    stockSymbol,
-    isDividend,
-    transactions.data ?? []
-  );
+const autoFilledShares = useDividendSharesAutoFill(
+  stockSymbol,
+  isDividend,
+  transactions.data ?? []
+);
 
-  useEffect(() => {
-    // Only auto-fill for new transactions, not edits
-    if (autoFilledShares !== null && !editTransaction) {
+const hasUserEdited = useRef(false);
+
+useEffect(() => {
+  hasUserEdited.current = false;
+}, [stockSymbol, isDividend]);
+
+useEffect(() => {
+  if (editTransaction) return;
+
+  if (!hasUserEdited.current) {
+    if (autoFilledShares !== null) {
       form.setValue("numberOfShares", autoFilledShares);
+    } else {
+      form.setValue("numberOfShares", 0);
     }
-  }, [autoFilledShares, editTransaction, form]);
-
+  }
+}, [autoFilledShares, editTransaction, form]);
 
   return (
     <Form {...form}>
@@ -129,7 +139,17 @@ export default function TransactionForm(props: TransactionFormProps) {
         <FormField
           control={form.control}
           name="numberOfShares"
-          render={({ field }) => <SharesCountInput field={field} />}
+          render={({ field }) => (
+            <SharesCountInput
+              field={{
+                ...field,
+                onChange: (e) => {
+                  hasUserEdited.current = true;
+                  field.onChange(e);
+                },
+              }}
+            />
+          )}
         />
 
         {/* Conditionally render pricePerShare for buy/sell or dividendPerShare for dividend */}
