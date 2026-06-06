@@ -33,7 +33,7 @@ import { Button } from "@/components/ui/button";
 const MotionTableRow = motion.create(TableRow);
 
 interface TransactionFilters {
-  types?: ("buy" | "sell" | "dividend")[];
+  types?: string[];
   symbols?: string[];
 }
 
@@ -53,12 +53,12 @@ interface DataTableProps<TData, TValue> {
   onToggleView?: (fullTable: boolean) => void;
   renderMobileSubRow?: (original: TData) => React.ReactNode;
   pageState: pageState;
-  setPageState: (value: pageState) => void;
+  setPageState: React.Dispatch<React.SetStateAction<pageState>>;
   totalPages: number;
   filters: TransactionFilters;
-  setFilters: (value: TransactionFilters) => void;
+  setFilters:  React.Dispatch<React.SetStateAction<TransactionFilters>>;
   sorting: { key: string, order: "asc" | "desc" } | null;
-  setSorting: (value: { key: string, order: "asc" | "desc" } | null) => void
+  setSorting: React.Dispatch<React.SetStateAction<{ key: string, order: "asc" | "desc" } | null>>;
   availableSymbols: { stockSymbol: string }[]
 
 }
@@ -74,7 +74,7 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
   "use no memo";
 
 
-  const { availableSymbols, sorting, setSorting, setFilters, filters, pageState, setPageState, totalPages, columns, data, isLoading = false, shouldShowMobileLayout, onToggleView, renderMobileSubRow } = props as any;
+  const { availableSymbols, sorting, setSorting, setFilters, filters, pageState, setPageState, totalPages, columns, data, isLoading = false, shouldShowMobileLayout, onToggleView, renderMobileSubRow } = props 
 
 
   /* eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable() returns functions that cannot be memoized safely */
@@ -94,13 +94,13 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
 
   const handleNext = () => {
     if (pageState?.page < totalPages) {
-      setPageState((prev: any) => ({ ...prev, page: prev.page + 1 }));
+      setPageState((prev) => ({ ...prev, page: prev.page + 1 }));
     }
   };
 
   const handlePrev = () => {
     if (pageState?.page > 1) {
-      setPageState((prev: any) => ({ ...prev, page: prev.page - 1 }));
+      setPageState((prev) => ({ ...prev, page: prev.page - 1 }));
     }
   };
 
@@ -117,9 +117,9 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
             <DataTableFilters
               data={data as Transaction[]}
               availableSymbols={availableSymbols?.map((val: { stockSymbol: string }) => val.stockSymbol)}
-              onFilterChange={(newFilters: any) => {
+              onFilterChange={(newFilters) => {
                 setFilters(newFilters);
-                setPageState((prev: any) => ({ ...prev, page: 1 }));
+                setPageState((prev) => ({ ...prev, page: 1 }));
               }} activeFilters={filters} />
             {shouldShowMobileLayout !== undefined && onToggleView ? (
               <TableViewToggle
@@ -146,11 +146,11 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
                   return (
                     <TableHead key={header.id}
                       onClick={header.column.getCanSort() ? () => {
-                        setPageState((prev: any) => ({ ...prev, page: 1 }));
+                        setPageState((prev) => ({ ...prev, page: 1 }));
                         if (sorting == null) {
                           setSorting({ key: header.column.id, order: "asc" })
                         } else if (sorting?.key === header.column.id) {
-                          setSorting((prev: any) => ({ key: header.column.id, order: prev.order === "desc" ? "asc" : "desc" }))
+                          setSorting((prev) => ({ key: header.column.id, order: prev?.order === "desc" ? "asc" : "desc" }))
                         } else {
                           setSorting({ key: header.column.id, order: "asc" })
                         }

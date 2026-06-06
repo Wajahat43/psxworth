@@ -112,7 +112,7 @@ const getTransactionsUncached = async (
   portfolioId: number,
   page: number = 1,
   pageSize: number = 20,
-  filters?: { types?: ("buy" | "sell" | "dividend")[], symbols?: string[] },
+  filters?: { types?: string[], symbols?: string[] },
   sorting?: { key: string; order: string } | null
 ) => {
   await withPortfolioOwnership(portfolioId, userId);
@@ -120,7 +120,7 @@ const getTransactionsUncached = async (
 
   const whereClause = and(
     eq(transactionTable.portfolioId, portfolioId),
-    filters?.types && filters.types.length > 0 ? inArray(transactionTable.type, filters.types) : undefined,
+    filters?.types && filters.types.length > 0 ? inArray(transactionTable.type, filters.types as ("buy" | "sell" | "dividend")[] ) : undefined,
     filters?.symbols && filters.symbols.length > 0 ? inArray(transactionTable.stockSymbol, filters.symbols) : undefined,
   );
 
@@ -173,7 +173,7 @@ export const getTransactions = withErrorHandling(
     portfolioId: number,
     page: number = 1,
     pageSize: number = 10,
-    filters?: { types?: ("buy" | "sell" | "dividend")[]; symbols?: string[] },
+    filters?: { types?: string[]; symbols?: string[] },
     sorting?: { key: string; order: string } | null
   ) => {
     page = Math.max(1, page ?? 1);

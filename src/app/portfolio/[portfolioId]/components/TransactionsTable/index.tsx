@@ -21,7 +21,7 @@ interface TransactionsTableProps {
 }
 
 interface TransactionFilters {
-  types?: ("buy" | "sell" | "dividend")[];
+  types?: string[];
   symbols?: string[];
 }
 
