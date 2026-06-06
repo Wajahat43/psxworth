@@ -18,7 +18,7 @@ export const useTransactions = (
   portfolioId: number,
   page: number = 1,
   pageSize: number = 10,
-  filters?: { types?: ("buy" | "sell" | "dividend")[]; symbols?: string[] },
+  filters?: { types?: string[]; symbols?: string[] },
   sorting?: { key: string; order: string } | null
 ) => {
   const queryClient = useQueryClient();
