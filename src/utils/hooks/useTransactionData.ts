@@ -47,7 +47,7 @@ export const useTransactions = (
   });
 
   const AllTransactions = useQuery({
-    queryKey: ["transactions", portfolioId, "all"],
+    queryKey: ["transactions", portfolioId, "all",filters],
     queryFn: async () => {
       const result = await getAllTransactions(portfolioId,filters);
       if (result.success) {
@@ -56,7 +56,7 @@ export const useTransactions = (
         }
       } else {
         toast({ title: result.message || "An error occurred", type: "error" });
-        return
+        return null
 
       }
     },
