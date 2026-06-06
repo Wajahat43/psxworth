@@ -43,15 +43,17 @@ export function ExportTransactionsButton({
   const params = useParams();
   const portfolioId = Number(params.portfolioId)
 
-  const { AllTransactions } = useTransactions(portfolioId)
-
-  const handleExportAll = async () => {
-    const result = await AllTransactions.refetch()
-    const data = result.data?.items
-    const csvContent = exportTransactionsToCSV(data ?? transactions);
-    const filename = generateExportFilename(false, data?.length ?? transactions?.length);
+  const { AllTransactions } = useTransactions(portfolioId,1,10,currentViewFilters)
+ const handleExportAll = async () => {
+    
+    const result = await AllTransactions.refetch();
+    const data = result.data?.items;
+    if(!data) return 
+    const csvContent = exportTransactionsToCSV(data);
+    const filename = generateExportFilename(false, data.length);
     downloadCSV(csvContent, filename);
-  };
+ 
+};
 
 
 

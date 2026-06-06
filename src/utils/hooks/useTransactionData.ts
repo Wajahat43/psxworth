@@ -19,7 +19,8 @@ export const useTransactions = (
   page: number = 1,
   pageSize: number = 10,
   filters?: { types?: string[]; symbols?: string[] },
-  sorting?: { key: string; order: string } | null
+  sorting?: { key: string; order: string } | null,
+  fetchPaginated: boolean = false
 ) => {
   const queryClient = useQueryClient();
 
@@ -36,25 +37,28 @@ export const useTransactions = (
           totalPages: number;
           availableSymbols:{stockSymbol:string}[]
 
-          
+
         };
       }
       throw new Error(result.message);
     },
-    enabled: !!portfolioId,
+    enabled: !!portfolioId && fetchPaginated,
     staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh for 5 minutes
   });
 
   const AllTransactions = useQuery({
-    queryKey: ["transactions", portfolioId,"all"],
+    queryKey: ["transactions", portfolioId, "all"],
     queryFn: async () => {
-      const result = await getAllTransactions(portfolioId);
+      const result = await getAllTransactions(portfolioId,filters);
       if (result.success) {
         return result.data as unknown as {
-          items: Transaction[]  
-        };
+          items: Transaction[]
+        }
+      } else {
+        toast({ title: result.message || "An error occurred", type: "error" });
+        return
+
       }
-      throw new Error(result.message);
     },
     enabled: false,
   });

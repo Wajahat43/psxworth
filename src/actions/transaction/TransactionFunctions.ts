@@ -154,10 +154,10 @@ const getTransactionsUncached = async (
       .select({ count: count() })
       .from(transactionTable)
       .where(whereClause),
-  db
-  .selectDistinct({ stockSymbol: transactionTable.stockSymbol })
-  .from(transactionTable)
-  .where(eq(transactionTable.portfolioId, portfolioId))
+    db
+      .selectDistinct({ stockSymbol: transactionTable.stockSymbol })
+      .from(transactionTable)
+      .where(eq(transactionTable.portfolioId, portfolioId))
 
   ]);
 
@@ -211,14 +211,22 @@ export const getTransactions = withErrorHandling(
 export const getAllTransactions = withErrorHandling(
   async (
     portfolioId: number,
+    filters?: { types?: string[]; symbols?: string[] },
+
   ) => {
     const userId = await requireAuth();
     await withPortfolioOwnership(portfolioId, userId);
-const result = await db
-  .select()
-  .from(transactionTable)
-  .where(eq(transactionTable.portfolioId, portfolioId))
-  .orderBy(asc(transactionTable.transactionDate), asc(transactionTable.type));
+
+    const whereClause = and(
+      eq(transactionTable.portfolioId, portfolioId),
+      filters?.types && filters.types.length > 0 ? inArray(transactionTable.type, filters.types as ("buy" | "sell" | "dividend")[]) : undefined,
+      filters?.symbols && filters.symbols.length > 0 ? inArray(transactionTable.stockSymbol, filters.symbols) : undefined,
+    );
+    const result = await db
+      .select()
+      .from(transactionTable)
+      .where(whereClause)
+      .orderBy(asc(transactionTable.transactionDate), asc(transactionTable.type));
     return {
       items: result,
     };

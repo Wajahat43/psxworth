@@ -41,7 +41,7 @@ export const TransactionsTable = (props: TransactionsTableProps) => {
   const [filters, setFilters] = React.useState<TransactionFilters>({});
   const [sorting, setSorting] = React.useState<{ key: string, order: "asc" | "desc" } | null>(null);
 
-  const { transactions } = useTransactions(portfolioId, pageState.page, pageState.pageSize, filters, sorting);
+  const { transactions } = useTransactions(portfolioId, pageState.page, pageState.pageSize, filters, sorting, true);
   const totalPages = transactions?.data?.totalPages ?? 0;
   const totalCount=transactions?.data?.totalCount ?? 0
   const pricesQuery = useQuery({
