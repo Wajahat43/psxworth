@@ -156,7 +156,7 @@ export function HistoricalReturnsChart({ portfolioId }: HistoricalReturnsChartPr
         ) : error ? (
           <ErrorState
             title="Failed to load historical returns"
-            description={error instanceof Error ? error.message : "Failed to load data"}
+            description="Failed to load historical returns data. Please try again later."
             className="h-[400px] rounded-none border-0 bg-slate-900 shadow-none"
           />
         ) : !hasData ? (

@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { IconProps } from "./types";
 
-const GitHubIcon: FC<IconProps> = ({
+const WhatsAppIcon: FC<IconProps> = ({
   size = 24,
   color = "currentColor",
   ...props
@@ -27,4 +27,4 @@ const GitHubIcon: FC<IconProps> = ({
   );
 };
 
-export default GitHubIcon;
+export default WhatsAppIcon;
