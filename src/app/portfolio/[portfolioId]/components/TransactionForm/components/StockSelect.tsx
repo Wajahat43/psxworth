@@ -11,7 +11,7 @@ import { STOCKS_INFO } from "@/utils/constants/stockSymbols";
 import { ChevronsUpDown, Check, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { ControllerRenderProps, FieldValues, Path } from "react-hook-form";
+import { ControllerRenderProps, FieldValues, Path, useFormContext } from "react-hook-form";
 
 interface StockSelectProps<TFieldValues extends FieldValues> {
   field: ControllerRenderProps<TFieldValues, Path<TFieldValues>>;
@@ -20,6 +20,7 @@ interface StockSelectProps<TFieldValues extends FieldValues> {
 export function StockSelect<TFieldValues extends FieldValues>({ field }: StockSelectProps<TFieldValues>) {
   "use no memo";
   const { error } = useFormField();
+  const { clearErrors } = useFormContext<TFieldValues>();
 
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -33,6 +34,10 @@ export function StockSelect<TFieldValues extends FieldValues>({ field }: StockSe
       );
 
   const handleSelect = (stockSymbol: string) => {
+    if (error) {
+      clearErrors(field.name as Path<TFieldValues>);
+    }
+
     field.onChange(stockSymbol);
     setOpen(false);
     setSearchValue("");

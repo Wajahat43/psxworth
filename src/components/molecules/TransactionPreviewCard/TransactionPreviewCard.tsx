@@ -51,34 +51,10 @@ export function TransactionPreviewCard({
   const {
     control,
     watch,
-    formState: { errors },
-    trigger,
-    clearErrors,
   } = hookForm;
 
   const watchedTransaction = watch();
-
-  //Trigger form validation manually because our transaction can have invalid fields.
-  useEffect(() => {
-    trigger(); // Validates all fields
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (watchedTransaction.transactionDate) {
-      trigger("transactionDate");
-    }
-  }, [watchedTransaction.transactionDate, trigger]);
-
-  /**
-   * Re-validate stock symbol field when it changes to clear persistent errors
-   */
-  useEffect(() => {
-    if (watchedTransaction.stockSymbol) {
-      clearErrors("stockSymbol");
-      trigger("stockSymbol");
-    }
-  }, [watchedTransaction.stockSymbol, clearErrors, trigger]);
+  const validationResult = transactionSchema.safeParse(watchedTransaction);
 
   /**
    * Give the updated transaction to the parent component. It can then use this for example, for checking
@@ -89,8 +65,7 @@ export function TransactionPreviewCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(watchedTransaction)]);
 
-  const validationErrors = Object.keys(errors).length;
-  const isValid = !validationErrors;
+  const isValid = validationResult.success;
 
   return (
     <FormProvider {...hookForm}>
