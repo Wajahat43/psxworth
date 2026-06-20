@@ -20,9 +20,10 @@ interface DataTableFiltersProps {
     types?: string[];
     symbols?: string[];
   };
+  availableSymbols: string[]
 }
 
-export function DataTableFilters({ data, onFilterChange, activeFilters }: DataTableFiltersProps) {
+export function DataTableFilters({ data, onFilterChange, activeFilters, availableSymbols }: DataTableFiltersProps) {
   // State for dropdown open/close
   const [isOpen, setIsOpen] = useState(false);
 
@@ -47,7 +48,7 @@ export function DataTableFilters({ data, onFilterChange, activeFilters }: DataTa
   })();
 
   // Extract unique stock symbols from data
-  const stockSymbols = (() => {
+  const stockSymbol = (() => {
     const symbols = new Set<string>();
     data.forEach((transaction) => {
       symbols.add(transaction.stockSymbol);
@@ -55,6 +56,7 @@ export function DataTableFilters({ data, onFilterChange, activeFilters }: DataTa
     return Array.from(symbols).sort();
   })();
 
+  const stockSymbols = availableSymbols ?? stockSymbol
   const toggleTypeFilter = (type: string) => {
     const currentTypes = pendingFilters.types || [];
     const newTypes = currentTypes.includes(type) ? currentTypes.filter((t) => t !== type) : [...currentTypes, type];
@@ -131,7 +133,7 @@ export function DataTableFilters({ data, onFilterChange, activeFilters }: DataTa
 
           <DropdownMenuLabel>Stock Symbol</DropdownMenuLabel>
           <div className="max-h-[200px] overflow-y-auto">
-            {stockSymbols.map((symbol) => (
+            {stockSymbols?.map((symbol) => (
               <DropdownMenuCheckboxItem
                 key={`symbol-${symbol}`}
                 checked={pendingFilters.symbols?.includes(symbol)}

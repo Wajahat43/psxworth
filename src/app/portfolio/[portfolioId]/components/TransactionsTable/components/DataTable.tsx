@@ -1,20 +1,26 @@
 "use client";
 
+
+
+import {
+  Select,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
+
 import { ExportTransactionsButton } from "@/components/molecules/ExportTransactionsButton";
 import { TableToggleColumns } from "@/components/ui/TableToggleColumns";
 import { CustomTableRow, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { Transaction } from "@/types";
 import {
-  FilterFn,
   ColumnDef,
   flexRender,
-  SortingState,
   useReactTable,
   getCoreRowModel,
-  getSortedRowModel,
   getExpandedRowModel,
-  getFilteredRowModel,
 } from "@tanstack/react-table";
 import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
@@ -22,8 +28,22 @@ import React from "react";
 import { TableViewToggle } from "../../TableViewToggle";
 import { TransactionDetailCard } from "../TransactionDetailCard";
 import { DataTableFilters } from "./DataTableFilters";
+import { Button } from "@/components/ui/button";
 
 const MotionTableRow = motion.create(TableRow);
+
+interface TransactionFilters {
+  types?: string[];
+  symbols?: string[];
+}
+
+
+interface pageState {
+  page: number,
+  pageSize: number
+
+}
+
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -31,14 +51,19 @@ interface DataTableProps<TData, TValue> {
   isLoading?: boolean;
   shouldShowMobileLayout?: boolean;
   onToggleView?: (fullTable: boolean) => void;
-  /** Renders a full-width row below each row when in mobile layout (e.g. "Since transaction") */
   renderMobileSubRow?: (original: TData) => React.ReactNode;
+  pageState: pageState;
+  setPageState: React.Dispatch<React.SetStateAction<pageState>>;
+  totalPages: number;
+  filters: TransactionFilters;
+  setFilters:  React.Dispatch<React.SetStateAction<TransactionFilters>>;
+  sorting: { key: string, order: "asc" | "desc" } | null;
+  setSorting: React.Dispatch<React.SetStateAction<{ key: string, order: "asc" | "desc" } | null>>;
+  availableSymbols: { stockSymbol: string }[]
+  totalCount:number
+
 }
 
-interface TransactionFilters {
-  types?: string[];
-  symbols?: string[];
-}
 
 const transition = {
   type: "spring",
@@ -48,49 +73,37 @@ const transition = {
 
 export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
   "use no memo";
-  const { columns, data, isLoading = false, shouldShowMobileLayout, onToggleView, renderMobileSubRow } = props;
-  const [sorting, setSorting] = React.useState<SortingState>([{ id: "transactionDate", desc: true }]);
-  const [filters, setFilters] = React.useState<TransactionFilters>({});
 
-  const transactionFilterFn: FilterFn<TData> = (row, columnId, filterValue: TransactionFilters) => {
-    const transaction = row.original as Transaction;
 
-    // Apply type filter
-    if (filterValue.types && filterValue.types.length > 0) {
-      if (!filterValue.types.includes(transaction.type)) {
-        return false;
-      }
-    }
+  const {totalCount, availableSymbols, sorting, setSorting, setFilters, filters, pageState, setPageState, totalPages, columns, data, isLoading = false, shouldShowMobileLayout, onToggleView, renderMobileSubRow } = props 
 
-    // Apply symbol filter
-    if (filterValue.symbols && filterValue.symbols.length > 0) {
-      if (!filterValue.symbols.includes(transaction.stockSymbol)) {
-        return false;
-      }
-    }
-
-    return true;
-  };
 
   /* eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table's useReactTable() returns functions that cannot be memoized safely */
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    onSortingChange: setSorting,
-    getSortedRowModel: getSortedRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    filterFns: {
-      transactionFilter: transactionFilterFn,
-    },
-    globalFilterFn: transactionFilterFn,
-    state: {
-      sorting,
-      globalFilter: filters,
-    },
-    onGlobalFilterChange: setFilters,
+
+
   });
+
+
+  const handlePageSize = (value: string) => {
+    setPageState({ page: 1, pageSize: Number(value) });
+  };
+
+  const handleNext = () => {
+    if (pageState?.page < totalPages) {
+      setPageState((prev) => ({ ...prev, page: prev.page + 1 }));
+    }
+  };
+
+  const handlePrev = () => {
+    if (pageState?.page > 1) {
+      setPageState((prev) => ({ ...prev, page: prev.page - 1 }));
+    }
+  };
 
   // Get current view transactions (filtered data)
   const currentViewTransactions = isLoading
@@ -102,7 +115,13 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
       <div className="flex h-full min-h-0 flex-col rounded-lg border border-slate-700">
         <div className="shrink-0 rounded-t-lg border-b border-slate-700 bg-slate-800 px-2 py-2">
           <div className="flex flex-wrap items-center justify-start md:justify-end gap-2 w-full md:w-auto">
-            <DataTableFilters data={data as Transaction[]} onFilterChange={setFilters} activeFilters={filters} />
+            <DataTableFilters
+              data={data as Transaction[]}
+              availableSymbols={availableSymbols?.map((val: { stockSymbol: string }) => val.stockSymbol)}
+              onFilterChange={(newFilters) => {
+                setFilters(newFilters);
+                setPageState((prev) => ({ ...prev, page: 1 }));
+              }} activeFilters={filters} />
             {shouldShowMobileLayout !== undefined && onToggleView ? (
               <TableViewToggle
                 shouldShowMobileLayout={shouldShowMobileLayout}
@@ -113,6 +132,7 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
             <TableToggleColumns table={table} className="ml-0 bg-slate-700 border-slate-600 hover:bg-slate-600" />
             <ExportTransactionsButton
               transactions={data as Transaction[]}
+              totalCount={totalCount}
               currentViewTransactions={currentViewTransactions}
               currentViewFilters={filters}
               disabled={isLoading}
@@ -126,7 +146,18 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className="sticky top-0 z-10 bg-slate-800 text-gray-100/90">
+                    <TableHead key={header.id}
+                      onClick={header.column.getCanSort() ? () => {
+                        setPageState((prev) => ({ ...prev, page: 1 }));
+                        if (sorting == null) {
+                          setSorting({ key: header.column.id, order: "asc" })
+                        } else if (sorting?.key === header.column.id) {
+                          setSorting((prev) => ({ key: header.column.id, order: prev?.order === "desc" ? "asc" : "desc" }))
+                        } else {
+                          setSorting({ key: header.column.id, order: "asc" })
+                        }
+                      } : undefined}
+                      className="sticky top-0 z-10 bg-slate-800 text-gray-100/90">
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
@@ -195,6 +226,33 @@ export function DataTable<TData, TValue>(props: DataTableProps<TData, TValue>) {
             )}
           </TableBody>
         </Table>
+        <div className="bg-slate-800  flex justify-between p-4">
+
+          <div className="">
+            <Select
+              value={String(pageState?.pageSize || 10)}
+              onValueChange={handlePageSize}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10 rows</SelectItem>
+                <SelectItem value="20">20 rows</SelectItem>
+                <SelectItem value="40">40 rows</SelectItem>
+                <SelectItem value="50">50 rows</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex gap-3">
+            <Button onClick={handlePrev} disabled={!pageState || pageState.page <= 1}>Prev</Button>
+            <Button variant="outline" disabled>{pageState?.page || 1}</Button>
+            <Button onClick={handleNext} disabled={!pageState || !totalPages || pageState.page >= totalPages}>Next</Button>
+          </div>
+
+
+        </div>
       </div>
     </MotionConfig>
   );

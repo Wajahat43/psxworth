@@ -17,6 +17,8 @@ import {
 } from "@/utils/helpers/exportTransactionsHelpers";
 import { Download, FileDown } from "lucide-react";
 import React from "react";
+import { useParams } from "next/navigation";
+import { useTransactions } from "@/utils/hooks/useTransactionData";
 
 interface ExportTransactionsButtonProps {
   transactions: Transaction[];
@@ -27,20 +29,33 @@ interface ExportTransactionsButtonProps {
   };
   disabled?: boolean;
   className?: string;
+  totalCount: number,
 }
 
 export function ExportTransactionsButton({
   transactions,
   currentViewTransactions,
   currentViewFilters,
+  totalCount,
   disabled = false,
   className,
 }: ExportTransactionsButtonProps) {
-  const handleExportAll = () => {
-    const csvContent = exportTransactionsToCSV(transactions);
-    const filename = generateExportFilename(false, transactions.length);
+  const params = useParams();
+  const portfolioId = Number(params.portfolioId)
+
+  const { AllTransactions } = useTransactions(portfolioId,1,10,currentViewFilters)
+ const handleExportAll = async () => {
+    
+    const result = await AllTransactions.refetch();
+    const data = result.data?.items;
+    if(!data) return 
+    const csvContent = exportTransactionsToCSV(data);
+    const filename = generateExportFilename(false, data.length);
     downloadCSV(csvContent, filename);
-  };
+ 
+};
+
+
 
   const handleExportCurrentView = () => {
     if (!currentViewTransactions) return;
@@ -73,7 +88,7 @@ export function ExportTransactionsButton({
         <DropdownMenuItem onClick={handleExportAll}>
           <FileDown className="h-4 w-4 mr-2" />
           Export All Transactions
-          <span className="ml-auto text-xs text-gray-300">({transactions.length} records)</span>
+          <span className="ml-auto text-xs text-gray-300">({totalCount} records)</span>
         </DropdownMenuItem>
 
         {hasCurrentView && (

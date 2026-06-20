@@ -15,7 +15,7 @@ import { Transaction, TransactionSchemaType } from "@/types";
 import { MULTIPLE_TRANSACTIONS_CREATED, TRANSACTION_CREATED, TRANSACTION_DELETED } from "@/utils/posthog/events";
 import { generateObject } from "ai";
 import "dotenv/config";
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq, and, inArray, count } from "drizzle-orm";
 import { unstable_cache, updateTag } from "next/cache";
 import { createResponse } from "../utils";
 import { requireAuth, withPortfolioOwnership, withErrorHandling } from "../utils/middleware";
@@ -107,34 +107,133 @@ export const parseRawTransactions = withErrorHandling(async (rawTransactions: st
   throw new Error("Transactions Couldn't be parsed properly. Please check if your data is valid.");
 });
 
-const getTransactionsUncached = async (userId: string, portfolioId: number) => {
+const getTransactionsUncached = async (
+  userId: string,
+  portfolioId: number,
+  page: number = 1,
+  pageSize: number = 20,
+  filters?: { types?: string[], symbols?: string[] },
+  sorting?: { key: string; order: string } | null
+) => {
   await withPortfolioOwnership(portfolioId, userId);
-  const transactions = await db
-    .select()
-    .from(transactionTable)
-    .where(eq(transactionTable.portfolioId, portfolioId))
-    .orderBy(asc(transactionTable.transactionDate), asc(transactionTable.type));
+  const offset = Math.max(0, (page - 1) * pageSize);
 
-  return transactions;
+  const whereClause = and(
+    eq(transactionTable.portfolioId, portfolioId),
+    filters?.types && filters.types.length > 0 ? inArray(transactionTable.type, filters.types as ("buy" | "sell" | "dividend")[] ) : undefined,
+    filters?.symbols && filters.symbols.length > 0 ? inArray(transactionTable.stockSymbol, filters.symbols) : undefined,
+  );
+
+  const sortableColumns = {
+    transactionDate: transactionTable.transactionDate,
+    type: transactionTable.type,
+    stockSymbol: transactionTable.stockSymbol,
+    numberOfShares: transactionTable.numberOfShares,
+    pricePerShare: transactionTable.pricePerShare,
+    commissionAndTaxes: transactionTable.commissionAndTaxes,
+  } as const;
+
+  const sortColumn = sorting?.key ? sortableColumns[sorting.key as keyof typeof sortableColumns] : undefined;
+
+  const orderByClause =
+    sortColumn
+      ? sorting?.order === "desc"
+        ? [desc(sortColumn),asc(transactionTable.id)]
+        : [asc(sortColumn),asc(transactionTable.id)]
+      : [asc(transactionTable.transactionDate), asc(transactionTable.type)];
+
+  const [transactions, totalCountResult,availableSymbols] = await Promise.all([
+    db
+      .select()
+      .from(transactionTable)
+      .where(whereClause)
+      .orderBy(...orderByClause)
+      .limit(pageSize)
+      .offset(offset),
+    db
+      .select({ count: count() })
+      .from(transactionTable)
+      .where(whereClause),
+    db
+      .selectDistinct({ stockSymbol: transactionTable.stockSymbol })
+      .from(transactionTable)
+      .where(eq(transactionTable.portfolioId, portfolioId))
+
+  ]);
+
+  return {
+    items: transactions,
+    totalCount: Number(totalCountResult[0].count),
+    availableSymbols
+  };
 };
 
-export const getTransactions = withErrorHandling(async (portfolioId: number) => {
-  const userId = await requireAuth();
-  await withPortfolioOwnership(portfolioId, userId);
+export const getTransactions = withErrorHandling(
+  async (
+    portfolioId: number,
+    page: number = 1,
+    pageSize: number = 10,
+    filters?: { types?: string[]; symbols?: string[] },
+    sorting?: { key: string; order: string } | null
+  ) => {
+    page = Math.max(1, page ?? 1);
+    pageSize = [10, 20, 40, 50].includes(pageSize)
+      ? pageSize
+      : 10;
 
-  const transactions = await unstable_cache(
-    async () => {
-      return await getTransactionsUncached(userId, portfolioId);
-    },
-    [`${userId}-${portfolioId}-transactions`],
-    {
-      tags: [`${userId}-${portfolioId}-transactions`],
-      revalidate: 60 * 60, //Revalidate after 1 hour.
-    }
-  )();
+    const userId = await requireAuth();
+    await withPortfolioOwnership(portfolioId, userId);
+    const filterKey = JSON.stringify(filters || {});
+    const sortKey = JSON.stringify(sorting || {});
+    const result = await unstable_cache(
+      async () => {
+        return await getTransactionsUncached(userId, portfolioId, page, pageSize, filters, sorting);
+      },
+      [`${userId}-${portfolioId}-transactions-page-${page}-size-${pageSize}-filters-${filterKey}-sorting-${sortKey}`],
+      {
+        tags: [`${userId}-${portfolioId}-transactions`],
+        revalidate: 60 * 60, //Revalidate after 1 hour.
+      }
+    )();
 
-  return transactions;
-});
+    return {
+      items: result.items,
+      totalCount: result.totalCount,
+      page,
+      pageSize,
+      totalPages: Math.ceil(result.totalCount / pageSize),
+      availableSymbols:result.availableSymbols
+    };
+  }
+);
+
+
+export const getAllTransactions = withErrorHandling(
+  async (
+    portfolioId: number,
+    filters?: { types?: string[]; symbols?: string[] },
+
+  ) => {
+    const userId = await requireAuth();
+    await withPortfolioOwnership(portfolioId, userId);
+
+    const whereClause = and(
+      eq(transactionTable.portfolioId, portfolioId),
+      filters?.types && filters.types.length > 0 ? inArray(transactionTable.type, filters.types as ("buy" | "sell" | "dividend")[]) : undefined,
+      filters?.symbols && filters.symbols.length > 0 ? inArray(transactionTable.stockSymbol, filters.symbols) : undefined,
+    );
+    const result = await db
+      .select()
+      .from(transactionTable)
+      .where(whereClause)
+      .orderBy(asc(transactionTable.transactionDate), asc(transactionTable.type));
+    return {
+      items: result,
+    };
+  }
+);
+
+
 
 export const editTransaction = withErrorHandling(
   async (transactionId: number, updatedTransactionData: TransactionSchemaType) => {
