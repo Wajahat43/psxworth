@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { toast } from "sonner";
@@ -38,14 +39,14 @@ export const CustomToast = (props: CustomToastProps) => {
           <div className={cn("text-sm font-medium leading-5", titleClassName)}>{title}</div>
           {description && <div className={cn("mt-1 text-sm leading-5", descriptionClassName)}>{description}</div>}
         </div>
-        <button
+        <Button
+          variant="ghost"
+          aria-label="Dismiss toast"
           onClick={() => toast.dismiss(id)}
-          type="button"
-          aria-label="Dismiss notification"
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/5 text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
+          className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-gray-100/70 flex items-center justify-center p-0"
         >
-          <X className="h-4 w-4" />
-        </button>
+          <X className="w-4 h-4" />
+        </Button>
       </div>
     </div>
   );

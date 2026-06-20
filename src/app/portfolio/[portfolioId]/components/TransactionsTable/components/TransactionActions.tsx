@@ -2,6 +2,7 @@
 
 import { TransactionFormDialog } from "@/app/portfolio/[portfolioId]/components/TransactionForm/TransactionFormDialog/TransactionFormDialog";
 import { ConfirmationDialog } from "@/components/molecules/ConfirmationDialog";
+import { Button } from "@/components/ui/button";
 import SpinningLoader from "@/components/ui/spinning-loader";
 import { Transaction } from "@/types";
 import { useTransactions } from "@/utils/hooks/useTransactionData";
@@ -23,12 +24,15 @@ export const TransactionActions = (props: TransactionActionsProps) => {
 
   return (
     <div className="flex gap-2" onClick={(event) => event.stopPropagation()}>
-      <button
+      <Button
+        type="button"
+        size="icon"
+        aria-label="Edit transaction"
         onClick={handleEdit}
-        className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-blue-500/30 transition-colors ring-1 ring-slate-600/50 hover:ring-blue-500/70"
+        className="!h-8 !w-8 !rounded-full !bg-slate-700/50 hover:!bg-blue-500/30 transition-colors !ring-1 !ring-slate-600/50 hover:!ring-blue-500/70"
       >
         <Edit size={14} className="text-slate-300" />
-      </button>
+      </Button>
       <ConfirmationDialog
         title="Are you sure?"
         description="This will permanently delete your transaction and remove it from your portfolio."
@@ -36,13 +40,18 @@ export const TransactionActions = (props: TransactionActionsProps) => {
         useHoldToConfirm
         holdDuration={700}
         trigger={
-          <button className="h-8 w-8 flex items-center justify-center rounded-full bg-slate-700/50 hover:bg-red-500/30 transition-colors ring-1 ring-slate-600/50 hover:ring-red-500/70">
+          <Button
+            type="button"
+            size="icon"
+            aria-label="Delete transaction"
+            className="!h-8 !w-8 !rounded-full !bg-slate-700/50 hover:!bg-red-500/30 transition-colors !ring-1 !ring-slate-600/50 hover:!ring-red-500/70"
+          >
             {deleteTransaction.isPending ? (
               <SpinningLoader size="xxs" color="red" />
             ) : (
               <Trash2 size={14} className="text-slate-300" />
             )}
-          </button>
+          </Button>
         }
       />
       <TransactionFormDialog

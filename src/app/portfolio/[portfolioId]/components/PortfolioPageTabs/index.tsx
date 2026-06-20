@@ -40,7 +40,8 @@ export function PortfolioPageTabs(props: PortfolioPageTabsProps) {
   const transactionsRef = useRef<HTMLDivElement | null>(null);
 
   const holdingsFilter = useHoldingsFilter(portfolioId);
-  const filteredPerformance = portfolioPerformance?.filter((stock) => matchesHoldingsFilter(stock, holdingsFilter)) || [];
+  const filteredPerformance =
+    portfolioPerformance?.filter((stock) => matchesHoldingsFilter(stock, holdingsFilter)) || [];
 
   const symbols = filteredPerformance.map((s) => s.stockSymbol);
   const symbolToShares = Object.fromEntries(filteredPerformance.map((s) => [s.stockSymbol, s.totalShares]));
@@ -187,7 +188,7 @@ export function PortfolioPageTabs(props: PortfolioPageTabsProps) {
             <button
               type="button"
               aria-label="Open transaction actions"
-              className="flex h-12 w-12 items-center justify-center rounded-full border border-primary/40 bg-primary text-primary-foreground shadow-lg transition-transform duration-200 active:scale-95"
+              className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-transform duration-200 active:scale-95 hover:bg-primary"
             >
               <Plus className="h-5 w-5" />
             </button>

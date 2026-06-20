@@ -53,12 +53,13 @@ export function TransactionTypeSelector<TFieldValues extends FieldValues>({
           className={cn(
             "relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
             transactionType === "buy"
-              ? "text-foreground"
+              ? "text-foreground hover:bg-transparent"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
           disabled={isEditing}
         >
           {transactionType === "buy" && getLayoutAnimationContainer()}
+
           <span className="relative z-10 flex items-center justify-center gap-2">Buy</span>
         </button>
         <button
@@ -67,12 +68,13 @@ export function TransactionTypeSelector<TFieldValues extends FieldValues>({
           className={cn(
             "relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
             transactionType === "sell"
-              ? "text-foreground"
+              ? "text-foreground hover:bg-transparent"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
           disabled={isEditing}
         >
           {transactionType === "sell" && getLayoutAnimationContainer()}
+
           <span className="relative z-10 flex items-center justify-center gap-2">Sell</span>
         </button>
         <button
@@ -81,12 +83,13 @@ export function TransactionTypeSelector<TFieldValues extends FieldValues>({
           className={cn(
             "relative px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
             transactionType === "dividend"
-              ? "text-foreground"
+              ? "text-foreground hover:bg-transparent"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
           disabled={isEditing}
         >
           {transactionType === "dividend" && getLayoutAnimationContainer()}
+
           <span className="relative z-10 flex items-center justify-center gap-2">Dividend</span>
         </button>
       </div>
@@ -259,8 +262,10 @@ export function CommissionInput<
           <button
             type="button"
             onClick={() => toggleField.onChange(false)}
+            aria-label="Commission in PKR"
+            aria-pressed={!isPercentage}
             className={cn(
-              "px-2 py-1 rounded-md text-xs font-medium transition-all duration-200",
+              "transition-all duration-200 text-xs font-medium px-3 py-1 rounded-md",
               !isPercentage ? "bg-slate-700 text-slate-100 shadow-sm" : "text-slate-400 hover:text-slate-200"
             )}
           >
@@ -268,9 +273,11 @@ export function CommissionInput<
           </button>
           <button
             type="button"
+            aria-label="Commission in percentage"
+            aria-pressed={isPercentage}
             onClick={() => toggleField.onChange(true)}
             className={cn(
-              "px-3 py-1 rounded-md text-xs font-medium transition-all duration-200",
+              "transition-all duration-200 text-xs font-medium px-3 py-1 rounded-md",
               isPercentage ? "bg-slate-700 text-slate-100 shadow-sm" : "text-slate-400 hover:text-slate-200"
             )}
           >
