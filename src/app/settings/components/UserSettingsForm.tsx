@@ -27,6 +27,22 @@ export default function UserSettingsForm({ initialSettings }: UserSettingsFormPr
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (commissionRate < 0) {
+      toast({
+        type: "error",
+        title: "Invalid Commission Rate",
+        description: "Commission rate cannot be negative.",
+      });
+      return;
+    }
+    if (isCommissionPercentage && commissionRate > 100) {
+      toast({
+        type: "error",
+        title: "Invalid Commission Rate",
+        description: "Percentage commission rate cannot exceed 100%.",
+      });
+      return;
+    }
     setIsSaving(true);
     try {
       const response = await updateUserSettings({
@@ -147,9 +163,14 @@ export default function UserSettingsForm({ initialSettings }: UserSettingsFormPr
                         id="commission-rate"
                         type="number"
                         step="any"
+                        min="0"
+                        max={isCommissionPercentage ? "100" : undefined}
                         placeholder="0.15"
                         value={commissionRate}
-                        onChange={(e) => setCommissionRate(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          setCommissionRate(isNaN(val) ? 0 : val);
+                        }}
                         className="bg-slate-950/50 border-slate-800 text-slate-100 pr-8 focus:ring-primary focus:border-primary"
                       />
                       <div className="absolute right-3 top-2.5 text-xs text-slate-500">

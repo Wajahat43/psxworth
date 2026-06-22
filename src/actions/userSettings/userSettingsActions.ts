@@ -19,15 +19,30 @@ export const getUserSettings = withErrorHandling(async () => {
         .then((rows) => rows[0]);
 
       if (!settings) {
-        // Create default settings if not exists
+        // Create default settings atomically if not exists
         const defaultSettings = {
           userId: id,
           taxStatus: "filer" as const,
           commissionRate: 0.15,
           isCommissionPercentage: true,
         };
-        const result = await db.insert(userSettingsTable).values(defaultSettings).returning();
-        settings = result[0];
+        const result = await db
+          .insert(userSettingsTable)
+          .values(defaultSettings)
+          .onConflictDoNothing()
+          .returning();
+        
+        if (result.length > 0) {
+          settings = result[0];
+        } else {
+          // If conflict occurred, select the setting created by concurrent query
+          settings = await db
+            .select()
+            .from(userSettingsTable)
+            .where(eq(userSettingsTable.userId, id))
+            .limit(1)
+            .then((rows) => rows[0]);
+        }
       }
       return settings;
     },
@@ -45,40 +60,39 @@ export const updateUserSettings = withErrorHandling(
   async (data: Omit<UserSettings, "userId" | "createdAt" | "updatedAt">) => {
     const userId = await requireAuth();
 
-    // Upsert user settings
-    const existing = await db
-      .select()
-      .from(userSettingsTable)
-      .where(eq(userSettingsTable.userId, userId))
-      .limit(1)
-      .then((rows) => rows[0]);
+    if (data.taxStatus !== "filer" && data.taxStatus !== "non-filer") {
+      throw new Error("Invalid tax status value");
+    }
+    if (typeof data.commissionRate !== "number" || !isFinite(data.commissionRate) || data.commissionRate < 0) {
+      throw new Error("Commission rate must be a non-negative finite number");
+    }
+    if (data.isCommissionPercentage && data.commissionRate > 100) {
+      throw new Error("Commission rate percentage cannot exceed 100%");
+    }
+    if (typeof data.isCommissionPercentage !== "boolean") {
+      throw new Error("isCommissionPercentage must be a boolean");
+    }
 
-    let updated;
-    if (existing) {
-      const result = await db
-        .update(userSettingsTable)
-        .set({
+    const result = await db
+      .insert(userSettingsTable)
+      .values({
+        userId,
+        taxStatus: data.taxStatus,
+        commissionRate: data.commissionRate,
+        isCommissionPercentage: data.isCommissionPercentage,
+      })
+      .onConflictDoUpdate({
+        target: userSettingsTable.userId,
+        set: {
           taxStatus: data.taxStatus,
           commissionRate: data.commissionRate,
           isCommissionPercentage: data.isCommissionPercentage,
           updatedAt: new Date(),
-        })
-        .where(eq(userSettingsTable.userId, userId))
-        .returning();
-      updated = result[0];
-    } else {
-      const result = await db
-        .insert(userSettingsTable)
-        .values({
-          userId,
-          taxStatus: data.taxStatus,
-          commissionRate: data.commissionRate,
-          isCommissionPercentage: data.isCommissionPercentage,
-        })
-        .returning();
-      updated = result[0];
-    }
+        },
+      })
+      .returning();
 
+    const updated = result[0];
     updateTag(`user-settings-${userId}`);
     return updated;
   }

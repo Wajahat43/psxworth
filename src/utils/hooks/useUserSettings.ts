@@ -4,19 +4,23 @@ import { getUserSettings, updateUserSettings } from "@/actions/userSettings/user
 import { UserSettings } from "@/db/schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/components/molecules/Toast";
+import { useAuth } from "@clerk/nextjs";
 
 export const useUserSettings = () => {
   const queryClient = useQueryClient();
+  const { userId } = useAuth();
 
   const settings = useQuery({
-    queryKey: ["userSettings"],
+    queryKey: ["userSettings", userId],
     queryFn: async () => {
+      if (!userId) throw new Error("User not authenticated");
       const result = await getUserSettings();
       if (result.success && result.data) {
         return result.data as UserSettings;
       }
       throw new Error(result.message || "Failed to load user settings");
     },
+    enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -33,7 +37,7 @@ export const useUserSettings = () => {
         type: "success",
         title: "Settings updated successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["userSettings"] });
+      queryClient.invalidateQueries({ queryKey: ["userSettings", userId] });
     },
     onError: (error: Error) => {
       toast({

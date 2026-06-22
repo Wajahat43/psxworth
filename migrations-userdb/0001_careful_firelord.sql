@@ -1,6 +1,6 @@
 CREATE TABLE "userSettingsTable" (
 	"user_id" text PRIMARY KEY NOT NULL,
-	"tax_status" text DEFAULT 'filer' NOT NULL,
+	"tax_status" text DEFAULT 'filer' NOT NULL CHECK ("tax_status" IN ('filer', 'non-filer')),
 	"commission_rate" real DEFAULT 0 NOT NULL,
 	"is_commission_percentage" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

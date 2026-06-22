@@ -108,7 +108,7 @@ export const CreatePortfolioForm = ({ onSuccess, portfolio }: CreatePortfolioFor
       updatePortfolioMutation.mutate({ ...portfolio, ...data, id: portfolio.id }, { onSuccess });
     } else {
       const { title, emoji, backgroundColor, useGlobalTax, taxStatus } = data;
-      createPortfolioMutation.mutate({ title, emoji, backgroundColor, useGlobalTax, taxStatus } as any, { onSuccess });
+      createPortfolioMutation.mutate({ title, emoji, backgroundColor, useGlobalTax, taxStatus }, { onSuccess });
     }
   };
 

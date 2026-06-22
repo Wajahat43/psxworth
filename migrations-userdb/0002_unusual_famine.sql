@@ -1,2 +1,2 @@
 ALTER TABLE "portfolioTable" ADD COLUMN "use_global_tax" boolean DEFAULT true NOT NULL;--> statement-breakpoint
-ALTER TABLE "portfolioTable" ADD COLUMN "tax_status" text DEFAULT 'filer' NOT NULL;
+ALTER TABLE "portfolioTable" ADD COLUMN "tax_status" text DEFAULT 'filer' NOT NULL CHECK ("tax_status" IN ('filer', 'non-filer'));

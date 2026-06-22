@@ -35,8 +35,8 @@ export function ImportTransactionsContent({ onCloseDialog }: ImportTransactionsC
   const params = useParams<{ portfolioId: string }>();
   const portfolioId = parseInt(params.portfolioId, 10);
 
-  const { settings } = useUserSettings();
-  const { portfolios } = usePortfolio();
+  const { settings, isLoading: isLoadingSettings } = useUserSettings();
+  const { portfolios, isLoadingPortfolios } = usePortfolio();
 
   const handleNext = () => {
     if (currentStep < steps.length) {
@@ -75,6 +75,14 @@ export function ImportTransactionsContent({ onCloseDialog }: ImportTransactionsC
   };
 
   const handleDataSubmit = async () => {
+    if (isLoadingSettings || isLoadingPortfolios) {
+      toast({
+        type: "error",
+        title: "Loading data",
+        description: "Please wait while settings and portfolios are loading.",
+      });
+      return;
+    }
     // Modified to use inputFormData
     setIsLoading(true);
     try {
@@ -146,7 +154,7 @@ export function ImportTransactionsContent({ onCloseDialog }: ImportTransactionsC
           <div className={getStepClasses(1)}>
             <MultipleTransactionsInput
               onSubmit={handleDataSubmit}
-              isLoading={isLoading}
+              isLoading={isLoading || isLoadingSettings || isLoadingPortfolios}
               initialData={inputFormData}
               onDataChange={handleInputDataChange}
             />

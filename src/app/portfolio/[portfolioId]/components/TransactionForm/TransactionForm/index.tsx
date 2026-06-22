@@ -75,6 +75,7 @@ export default function TransactionForm(props: TransactionFormProps) {
 
   const transactionType = form.watch("type");
   const isDividend = transactionType === "dividend";
+  const { dirtyFields } = form.formState;
 
   // Automatically pre-fill default values from settings when transaction type changes
   useEffect(() => {
@@ -89,18 +90,30 @@ export default function TransactionForm(props: TransactionFormProps) {
     }
 
     if (transactionType === "dividend") {
-      form.setValue("commissionAndTaxes", effectiveTaxStatus === "filer" ? 15 : 30);
-      form.setValue("isCommissionPercentage", true);
-    } else if (transactionType === "buy" || transactionType === "sell") {
-      if (settings) {
-        form.setValue("commissionAndTaxes", settings.commissionRate);
-        form.setValue("isCommissionPercentage", settings.isCommissionPercentage);
-      } else {
-        form.setValue("commissionAndTaxes", 0.15);
+      if (!dirtyFields.commissionAndTaxes) {
+        form.setValue("commissionAndTaxes", effectiveTaxStatus === "filer" ? 15 : 30);
+      }
+      if (!dirtyFields.isCommissionPercentage) {
         form.setValue("isCommissionPercentage", true);
       }
+    } else if (transactionType === "buy" || transactionType === "sell") {
+      if (!dirtyFields.commissionAndTaxes) {
+        form.setValue("commissionAndTaxes", settings ? settings.commissionRate : 0.15);
+      }
+      if (!dirtyFields.isCommissionPercentage) {
+        form.setValue("isCommissionPercentage", settings ? settings.isCommissionPercentage : true);
+      }
     }
-  }, [transactionType, settings, portfolios, portfolioId, editTransactionId, form]);
+  }, [
+    transactionType,
+    settings,
+    portfolios,
+    portfolioId,
+    editTransactionId,
+    form,
+    dirtyFields.commissionAndTaxes,
+    dirtyFields.isCommissionPercentage,
+  ]);
 
   const onSubmit = async (
     data: BuyTransactionSchemaType | SellTransactionSchemaType | DividendTransactionSchemaType

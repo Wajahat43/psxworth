@@ -66,7 +66,7 @@ export const getPortfolios = withErrorHandling(async () => {
     async (id: string) => {
       return db.select().from(portfolioTable).where(eq(portfolioTable.userId, id));
     },
-    [`user-portfolios`],
+    ["user-portfolios", userId],
     {
       tags: [`user-${userId}-portfolios`],
       revalidate: 10,

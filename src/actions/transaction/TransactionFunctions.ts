@@ -15,7 +15,7 @@ import { Transaction, TransactionSchemaType } from "@/types";
 import { MULTIPLE_TRANSACTIONS_CREATED, TRANSACTION_CREATED, TRANSACTION_DELETED } from "@/utils/posthog/events";
 import { generateObject } from "ai";
 import "dotenv/config";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { unstable_cache, updateTag } from "next/cache";
 import { createResponse } from "../utils";
 import { requireAuth, withPortfolioOwnership, withErrorHandling } from "../utils/middleware";
@@ -25,37 +25,40 @@ export const createTransactionServer = withErrorHandling(async (transactionData:
   const userId = await requireAuth();
   await withPortfolioOwnership(transactionData.portfolioId, userId);
 
-  // Fetch portfolio settings
+  // Fetch portfolio settings scoped to user for security
   const portfolio = await db
     .select()
     .from(portfolioTable)
-    .where(eq(portfolioTable.id, transactionData.portfolioId))
+    .where(and(eq(portfolioTable.id, transactionData.portfolioId), eq(portfolioTable.userId, userId)))
     .limit(1)
     .then((rows) => rows[0]);
+
+  // Query settings once and use local defaults if not found
+  let settings = await db
+    .select()
+    .from(userSettingsTable)
+    .where(eq(userSettingsTable.userId, userId))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  if (!settings) {
+    settings = {
+      userId,
+      taxStatus: "filer" as const,
+      commissionRate: 0.15,
+      isCommissionPercentage: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
 
   // Determine the effective tax status (local vs global)
   let effectiveTaxStatus: "filer" | "non-filer" = "filer";
   if (portfolio && !portfolio.useGlobalTax) {
     effectiveTaxStatus = portfolio.taxStatus;
   } else {
-    const settings = await db
-      .select()
-      .from(userSettingsTable)
-      .where(eq(userSettingsTable.userId, userId))
-      .limit(1)
-      .then((rows) => rows[0]);
-    if (settings) {
-      effectiveTaxStatus = settings.taxStatus;
-    }
+    effectiveTaxStatus = settings.taxStatus;
   }
-
-  // Cross-reference user settings for commission rules
-  const settings = await db
-    .select()
-    .from(userSettingsTable)
-    .where(eq(userSettingsTable.userId, userId))
-    .limit(1)
-    .then((rows) => rows[0]);
 
   if (transactionData.type === "dividend") {
     if (
@@ -72,10 +75,8 @@ export const createTransactionServer = withErrorHandling(async (transactionData:
       transactionData.commissionAndTaxes === null ||
       transactionData.commissionAndTaxes === 0
     ) {
-      if (settings) {
-        transactionData.commissionAndTaxes = settings.commissionRate;
-        transactionData.isCommissionPercentage = settings.isCommissionPercentage;
-      }
+      transactionData.commissionAndTaxes = settings.commissionRate;
+      transactionData.isCommissionPercentage = settings.isCommissionPercentage;
     }
   }
 
@@ -101,44 +102,54 @@ export const createTransactionServer = withErrorHandling(async (transactionData:
 });
 
 export const createMultipleTransactions = withErrorHandling(async (transactions: TransactionSchemaType[]) => {
-  const userId = await requireAuth();
-  await withPortfolioOwnership(transactions[0].portfolioId, userId);
-
   if (!transactions || transactions.length === 0) {
     throw new Error("No transactions provided");
   }
 
-  // Fetch portfolio settings
+  const userId = await requireAuth();
+  
+  const uniquePortfolioIds = new Set(transactions.map((t) => t.portfolioId));
+  if (uniquePortfolioIds.size !== 1) {
+    throw new Error("All transactions in a batch must belong to the same portfolio");
+  }
+
+  const portfolioId = transactions[0].portfolioId;
+  await withPortfolioOwnership(portfolioId, userId);
+
+  // Fetch portfolio settings scoped to user for security
   const portfolio = await db
     .select()
     .from(portfolioTable)
-    .where(eq(portfolioTable.id, transactions[0].portfolioId))
+    .where(and(eq(portfolioTable.id, portfolioId), eq(portfolioTable.userId, userId)))
     .limit(1)
     .then((rows) => rows[0]);
+
+  // Query settings once and use local defaults if not found
+  let settings = await db
+    .select()
+    .from(userSettingsTable)
+    .where(eq(userSettingsTable.userId, userId))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  if (!settings) {
+    settings = {
+      userId,
+      taxStatus: "filer" as const,
+      commissionRate: 0.15,
+      isCommissionPercentage: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
 
   // Determine the effective tax status (local vs global)
   let effectiveTaxStatus: "filer" | "non-filer" = "filer";
   if (portfolio && !portfolio.useGlobalTax) {
     effectiveTaxStatus = portfolio.taxStatus;
   } else {
-    const settings = await db
-      .select()
-      .from(userSettingsTable)
-      .where(eq(userSettingsTable.userId, userId))
-      .limit(1)
-      .then((rows) => rows[0]);
-    if (settings) {
-      effectiveTaxStatus = settings.taxStatus;
-    }
+    effectiveTaxStatus = settings.taxStatus;
   }
-
-  // Cross-reference user settings for commission rules
-  const settings = await db
-    .select()
-    .from(userSettingsTable)
-    .where(eq(userSettingsTable.userId, userId))
-    .limit(1)
-    .then((rows) => rows[0]);
 
   transactions.forEach((transactionData) => {
     if (transactionData.type === "dividend") {
@@ -156,15 +167,12 @@ export const createMultipleTransactions = withErrorHandling(async (transactions:
         transactionData.commissionAndTaxes === null ||
         transactionData.commissionAndTaxes === 0
       ) {
-        if (settings) {
-          transactionData.commissionAndTaxes = settings.commissionRate;
-          transactionData.isCommissionPercentage = settings.isCommissionPercentage;
-        }
+        transactionData.commissionAndTaxes = settings.commissionRate;
+        transactionData.isCommissionPercentage = settings.isCommissionPercentage;
       }
     }
   });
 
-  const portfolioId = transactions[0].portfolioId;
   const sortedTransactions = sortTransactionsByDateAndType(transactions);
   await db.transaction(async (tx) => {
     const formattedTransactions = sortedTransactions.map((t) => ({
