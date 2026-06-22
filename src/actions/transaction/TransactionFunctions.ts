@@ -6,7 +6,7 @@ import {
 } from "@/actions/portfolioPerformance/portfolioPerformance";
 import { getPostHogServer } from "@/app/posthog-server";
 import { db } from "@/db";
-import { transactionTable } from "@/db/schema";
+import { portfolioTable, transactionTable, userSettingsTable } from "@/db/schema";
 import { createTracedModel } from "@/lib/ai/aiClient";
 import { parseTransactionsAIResponse } from "@/lib/ai/helpers";
 import { TRANSACTION_PARSER_SYSTEM_PROMPT } from "@/lib/ai/prompts";
@@ -24,6 +24,60 @@ import { sortTransactionsByDateAndType } from "./helpers";
 export const createTransactionServer = withErrorHandling(async (transactionData: TransactionSchemaType) => {
   const userId = await requireAuth();
   await withPortfolioOwnership(transactionData.portfolioId, userId);
+
+  // Fetch portfolio settings
+  const portfolio = await db
+    .select()
+    .from(portfolioTable)
+    .where(eq(portfolioTable.id, transactionData.portfolioId))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  // Determine the effective tax status (local vs global)
+  let effectiveTaxStatus: "filer" | "non-filer" = "filer";
+  if (portfolio && !portfolio.useGlobalTax) {
+    effectiveTaxStatus = portfolio.taxStatus;
+  } else {
+    const settings = await db
+      .select()
+      .from(userSettingsTable)
+      .where(eq(userSettingsTable.userId, userId))
+      .limit(1)
+      .then((rows) => rows[0]);
+    if (settings) {
+      effectiveTaxStatus = settings.taxStatus;
+    }
+  }
+
+  // Cross-reference user settings for commission rules
+  const settings = await db
+    .select()
+    .from(userSettingsTable)
+    .where(eq(userSettingsTable.userId, userId))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  if (transactionData.type === "dividend") {
+    if (
+      transactionData.commissionAndTaxes === undefined ||
+      transactionData.commissionAndTaxes === null ||
+      transactionData.commissionAndTaxes === 0
+    ) {
+      transactionData.commissionAndTaxes = effectiveTaxStatus === "filer" ? 15 : 30;
+      transactionData.isCommissionPercentage = true;
+    }
+  } else if (transactionData.type === "buy" || transactionData.type === "sell") {
+    if (
+      transactionData.commissionAndTaxes === undefined ||
+      transactionData.commissionAndTaxes === null ||
+      transactionData.commissionAndTaxes === 0
+    ) {
+      if (settings) {
+        transactionData.commissionAndTaxes = settings.commissionRate;
+        transactionData.isCommissionPercentage = settings.isCommissionPercentage;
+      }
+    }
+  }
 
   const formattedData = {
     ...transactionData,
@@ -53,6 +107,62 @@ export const createMultipleTransactions = withErrorHandling(async (transactions:
   if (!transactions || transactions.length === 0) {
     throw new Error("No transactions provided");
   }
+
+  // Fetch portfolio settings
+  const portfolio = await db
+    .select()
+    .from(portfolioTable)
+    .where(eq(portfolioTable.id, transactions[0].portfolioId))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  // Determine the effective tax status (local vs global)
+  let effectiveTaxStatus: "filer" | "non-filer" = "filer";
+  if (portfolio && !portfolio.useGlobalTax) {
+    effectiveTaxStatus = portfolio.taxStatus;
+  } else {
+    const settings = await db
+      .select()
+      .from(userSettingsTable)
+      .where(eq(userSettingsTable.userId, userId))
+      .limit(1)
+      .then((rows) => rows[0]);
+    if (settings) {
+      effectiveTaxStatus = settings.taxStatus;
+    }
+  }
+
+  // Cross-reference user settings for commission rules
+  const settings = await db
+    .select()
+    .from(userSettingsTable)
+    .where(eq(userSettingsTable.userId, userId))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  transactions.forEach((transactionData) => {
+    if (transactionData.type === "dividend") {
+      if (
+        transactionData.commissionAndTaxes === undefined ||
+        transactionData.commissionAndTaxes === null ||
+        transactionData.commissionAndTaxes === 0
+      ) {
+        transactionData.commissionAndTaxes = effectiveTaxStatus === "filer" ? 15 : 30;
+        transactionData.isCommissionPercentage = true;
+      }
+    } else if (transactionData.type === "buy" || transactionData.type === "sell") {
+      if (
+        transactionData.commissionAndTaxes === undefined ||
+        transactionData.commissionAndTaxes === null ||
+        transactionData.commissionAndTaxes === 0
+      ) {
+        if (settings) {
+          transactionData.commissionAndTaxes = settings.commissionRate;
+          transactionData.isCommissionPercentage = settings.isCommissionPercentage;
+        }
+      }
+    }
+  });
 
   const portfolioId = transactions[0].portfolioId;
   const sortedTransactions = sortTransactionsByDateAndType(transactions);

@@ -1,10 +1,22 @@
-import { createPortfolio, updatePortfolio } from "@/actions/portfolio/portfolioActions";
+import { createPortfolio, getPortfolios, updatePortfolio } from "@/actions/portfolio/portfolioActions";
 import { toast } from "@/components/molecules/Toast";
 import { Portfolio } from "@/db/schema";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { handleServerPromise } from "../helpers/server";
 
 export const usePortfolio = () => {
+  const portfolios = useQuery({
+    queryKey: ["portfolios"],
+    queryFn: async () => {
+      const result = await getPortfolios();
+      if (result.success && result.data) {
+        return result.data as Portfolio[];
+      }
+      throw new Error(result.message || "Failed to load portfolios");
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const createPortfolioMutation = useMutation({
     mutationFn: (data: Omit<Portfolio, "userId" | "createdAt" | "updatedAt" | "id">) =>
       handleServerPromise(createPortfolio(data)),
@@ -36,6 +48,8 @@ export const usePortfolio = () => {
   });
 
   return {
+    portfolios: portfolios.data ?? [],
+    isLoadingPortfolios: portfolios.isLoading,
     createPortfolioMutation,
     updatePortfolioMutation,
   };

@@ -7,6 +7,8 @@ import { toast } from "@/components/molecules/Toast";
 import MultipleTransactionsReview from "@/components/organisms/ImportTransactions/components/MultipleTransactionsReview/MultipleTransactionsReview";
 import { Card } from "@/components/ui/card";
 import { TransactionSchemaType } from "@/types";
+import { usePortfolio } from "@/utils/hooks/usePortfolio";
+import { useUserSettings } from "@/utils/hooks/useUserSettings";
 import { useParams } from "next/navigation";
 import posthog from "posthog-js";
 import React, { useState } from "react";
@@ -32,6 +34,9 @@ export function ImportTransactionsContent({ onCloseDialog }: ImportTransactionsC
 
   const params = useParams<{ portfolioId: string }>();
   const portfolioId = parseInt(params.portfolioId, 10);
+
+  const { settings } = useUserSettings();
+  const { portfolios } = usePortfolio();
 
   const handleNext = () => {
     if (currentStep < steps.length) {
@@ -76,9 +81,37 @@ export function ImportTransactionsContent({ onCloseDialog }: ImportTransactionsC
       const response = await parseRawTransactions(inputFormData);
 
       if (response.success && response.data) {
+        const portfolio = portfolios?.find((p) => p.id === portfolioId);
+        let effectiveTaxStatus: "filer" | "non-filer" = "filer";
+        if (portfolio && !portfolio.useGlobalTax) {
+          effectiveTaxStatus = portfolio.taxStatus;
+        } else if (settings) {
+          effectiveTaxStatus = settings.taxStatus;
+        }
+
         //Attach portfolio ID with each transaction.
         response.data.forEach((transaction: any) => {
           transaction.portfolioId = portfolioId;
+
+          // Compute and pre-fill commission & taxes if not parsed or is 0
+          if (
+            transaction.commissionAndTaxes === undefined ||
+            transaction.commissionAndTaxes === null ||
+            transaction.commissionAndTaxes === 0
+          ) {
+            if (transaction.type === "dividend") {
+              transaction.commissionAndTaxes = effectiveTaxStatus === "filer" ? 15 : 30;
+              transaction.isCommissionPercentage = true;
+            } else if (transaction.type === "buy" || transaction.type === "sell") {
+              if (settings) {
+                transaction.commissionAndTaxes = settings.commissionRate;
+                transaction.isCommissionPercentage = settings.isCommissionPercentage;
+              } else {
+                transaction.commissionAndTaxes = 0.15;
+                transaction.isCommissionPercentage = true;
+              }
+            }
+          }
 
           if (transaction.isCommissionPercentage === undefined) {
             transaction.isCommissionPercentage = false;

@@ -10,6 +10,8 @@ export const createPortfolioSchema = z.object({
   backgroundColor: z.string().trim().min(1, {
     message: "Background color is required.",
   }),
+  useGlobalTax: z.boolean().default(true),
+  taxStatus: z.enum(["filer", "non-filer"]).default("filer"),
 });
 
 export const updatePortfolioSchema = createPortfolioSchema.extend({

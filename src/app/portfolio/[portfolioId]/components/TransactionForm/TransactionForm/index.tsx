@@ -13,8 +13,11 @@ import {
   SellTransaction,
 } from "@/types";
 import { useTransactions } from "@/utils/hooks/useTransactionData";
+import { useUserSettings } from "@/utils/hooks/useUserSettings";
+import { usePortfolio } from "@/utils/hooks/usePortfolio";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { StockSelect } from "../components/StockSelect";
 import {
   DateInput,
@@ -41,6 +44,8 @@ export default function TransactionForm(props: TransactionFormProps) {
   const { onSuccess, portfolioId, editTransaction, editTransactionId } = props;
 
   const { createTransaction, updateTransaction } = useTransactions(portfolioId);
+  const { settings } = useUserSettings();
+  const { portfolios } = usePortfolio();
 
   // Get the appropriate schema and type based on transaction type
   const editTransactionType = editTransaction?.type || "buy";
@@ -70,6 +75,32 @@ export default function TransactionForm(props: TransactionFormProps) {
 
   const transactionType = form.watch("type");
   const isDividend = transactionType === "dividend";
+
+  // Automatically pre-fill default values from settings when transaction type changes
+  useEffect(() => {
+    if (editTransactionId) return; // Do not overwrite values during edit flow
+
+    const portfolio = portfolios?.find((p) => p.id === portfolioId);
+    let effectiveTaxStatus: "filer" | "non-filer" = "filer";
+    if (portfolio && !portfolio.useGlobalTax) {
+      effectiveTaxStatus = portfolio.taxStatus;
+    } else if (settings) {
+      effectiveTaxStatus = settings.taxStatus;
+    }
+
+    if (transactionType === "dividend") {
+      form.setValue("commissionAndTaxes", effectiveTaxStatus === "filer" ? 15 : 30);
+      form.setValue("isCommissionPercentage", true);
+    } else if (transactionType === "buy" || transactionType === "sell") {
+      if (settings) {
+        form.setValue("commissionAndTaxes", settings.commissionRate);
+        form.setValue("isCommissionPercentage", settings.isCommissionPercentage);
+      } else {
+        form.setValue("commissionAndTaxes", 0.15);
+        form.setValue("isCommissionPercentage", true);
+      }
+    }
+  }, [transactionType, settings, portfolios, portfolioId, editTransactionId, form]);
 
   const onSubmit = async (
     data: BuyTransactionSchemaType | SellTransactionSchemaType | DividendTransactionSchemaType

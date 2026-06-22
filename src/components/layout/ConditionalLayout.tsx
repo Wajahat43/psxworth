@@ -10,7 +10,7 @@ interface ConditionalLayoutProps {
 
 export const ConditionalLayout = ({ children }: ConditionalLayoutProps) => {
   const pathname = usePathname();
-  const isPortfolioPage = pathname.startsWith("/portfolio");
+  const isPortfolioPage = pathname.startsWith("/portfolio") || pathname.startsWith("/settings");
 
   if (isPortfolioPage) {
     // Portfolio pages have their own sidebar layout, no header/footer needed

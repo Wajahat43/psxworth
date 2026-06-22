@@ -8,6 +8,20 @@
       "when": 1771755807023,
       "tag": "0000_smart_rhodey",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780728780983,
+      "tag": "0001_careful_firelord",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780730356470,
+      "tag": "0002_unusual_famine",
+      "breakpoints": true
     }
   ]
 }
