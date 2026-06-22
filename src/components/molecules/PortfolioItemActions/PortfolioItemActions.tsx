@@ -23,6 +23,7 @@ import posthog from "posthog-js";
 import { useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { toast } from "../Toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PortfolioItemActionsProps {
   portfolio: Portfolio;
@@ -34,6 +35,7 @@ const PortfolioItemActions = ({ portfolio, className }: PortfolioItemActionsProp
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
 
   const holdingsFilter = useHoldingsFilter(portfolio.id);
   const setHoldingsFilter = usePortfolioStore((state) => state.setHoldingsFilter);
@@ -44,6 +46,7 @@ const PortfolioItemActions = ({ portfolio, className }: PortfolioItemActionsProp
     try {
       const response = await deletePortfolioAction(portfolio.id);
       if (response.success) {
+        queryClient.invalidateQueries({ queryKey: ["portfolios"] });
         toast({
           type: "success",
           title: "Portfolio Deleted Successfully",
