@@ -17,7 +17,7 @@ import { useUserSettings } from "@/utils/hooks/useUserSettings";
 import { usePortfolio } from "@/utils/hooks/usePortfolio";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { StockSelect } from "../components/StockSelect";
 import {
   DateInput,
@@ -76,10 +76,14 @@ export default function TransactionForm(props: TransactionFormProps) {
   const transactionType = form.watch("type");
   const isDividend = transactionType === "dividend";
   const { dirtyFields } = form.formState;
+  const prevTransactionType = useRef(transactionType);
 
   // Automatically pre-fill default values from settings when transaction type changes
   useEffect(() => {
     if (editTransactionId) return; // Do not overwrite values during edit flow
+
+    const isTabSwitch = prevTransactionType.current !== transactionType;
+    prevTransactionType.current = transactionType;
 
     const portfolio = portfolios?.find((p) => p.id === portfolioId);
     let effectiveTaxStatus: "filer" | "non-filer" = "filer";
@@ -90,17 +94,17 @@ export default function TransactionForm(props: TransactionFormProps) {
     }
 
     if (transactionType === "dividend") {
-      if (!dirtyFields.commissionAndTaxes) {
+      if (!dirtyFields.commissionAndTaxes || isTabSwitch) {
         form.setValue("commissionAndTaxes", effectiveTaxStatus === "filer" ? 15 : 30);
       }
-      if (!dirtyFields.isCommissionPercentage) {
+      if (!dirtyFields.isCommissionPercentage || isTabSwitch) {
         form.setValue("isCommissionPercentage", true);
       }
     } else if (transactionType === "buy" || transactionType === "sell") {
-      if (!dirtyFields.commissionAndTaxes) {
+      if (!dirtyFields.commissionAndTaxes || isTabSwitch) {
         form.setValue("commissionAndTaxes", settings ? settings.commissionRate : 0.15);
       }
-      if (!dirtyFields.isCommissionPercentage) {
+      if (!dirtyFields.isCommissionPercentage || isTabSwitch) {
         form.setValue("isCommissionPercentage", settings ? settings.isCommissionPercentage : true);
       }
     }

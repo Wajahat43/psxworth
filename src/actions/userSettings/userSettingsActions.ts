@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { userSettingsTable, UserSettings } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { userSettingsTable, UserSettings, portfolioTable } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 import { updateTag, unstable_cache } from "next/cache";
 import { requireAuth, withErrorHandling } from "../utils/middleware";
 
@@ -73,27 +73,37 @@ export const updateUserSettings = withErrorHandling(
       throw new Error("isCommissionPercentage must be a boolean");
     }
 
-    const result = await db
-      .insert(userSettingsTable)
-      .values({
-        userId,
-        taxStatus: data.taxStatus,
-        commissionRate: data.commissionRate,
-        isCommissionPercentage: data.isCommissionPercentage,
-      })
-      .onConflictDoUpdate({
-        target: userSettingsTable.userId,
-        set: {
+    const result = await db.transaction(async (tx) => {
+      const txResult = await tx
+        .insert(userSettingsTable)
+        .values({
+          userId,
           taxStatus: data.taxStatus,
           commissionRate: data.commissionRate,
           isCommissionPercentage: data.isCommissionPercentage,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
+        })
+        .onConflictDoUpdate({
+          target: userSettingsTable.userId,
+          set: {
+            taxStatus: data.taxStatus,
+            commissionRate: data.commissionRate,
+            isCommissionPercentage: data.isCommissionPercentage,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      await tx
+        .update(portfolioTable)
+        .set({ taxStatus: data.taxStatus })
+        .where(and(eq(portfolioTable.userId, userId), eq(portfolioTable.useGlobalTax, true)));
+
+      return txResult;
+    });
 
     const updated = result[0];
     updateTag(`user-settings-${userId}`);
+    updateTag(`user-${userId}-portfolios`);
     return updated;
   }
 );

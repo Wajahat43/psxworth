@@ -38,6 +38,7 @@ export const useUserSettings = () => {
         title: "Settings updated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["userSettings", userId] });
+      queryClient.invalidateQueries({ queryKey: ["portfolios", userId] });
     },
     onError: (error: Error) => {
       toast({
