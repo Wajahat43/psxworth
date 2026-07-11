@@ -21,19 +21,35 @@ import { createResponse } from "../utils";
 import { requireAuth, withPortfolioOwnership, withErrorHandling } from "../utils/middleware";
 import { sortTransactionsByDateAndType } from "./helpers";
 
-export const createTransactionServer = withErrorHandling(async (transactionData: TransactionSchemaType) => {
-  const userId = await requireAuth();
-  await withPortfolioOwnership(transactionData.portfolioId, userId);
-
+/**
+ * Fetches the user's global settings and the portfolio's tax override, then
+ * mutates each item in-place to fill in missing commissionAndTaxes /
+ * isCommissionPercentage values using the effective tax rules.
+ *
+ * Dividend tax rates (percentage of gross dividend):
+ *   - Filer:     15 %
+ *   - Non-filer: 30 %
+ *
+ * Buy / Sell commissions default to the user's saved commissionRate setting.
+ *
+ * @param userId      - Authenticated user ID (already verified by the caller).
+ * @param portfolioId - Portfolio that owns the transactions.
+ * @param items       - Transaction payloads to mutate in-place.
+ */
+async function applySettingsDefaults(
+  userId: string,
+  portfolioId: number,
+  items: TransactionSchemaType[]
+): Promise<void> {
   // Fetch portfolio settings scoped to user for security
   const portfolio = await db
     .select()
     .from(portfolioTable)
-    .where(and(eq(portfolioTable.id, transactionData.portfolioId), eq(portfolioTable.userId, userId)))
+    .where(and(eq(portfolioTable.id, portfolioId), eq(portfolioTable.userId, userId)))
     .limit(1)
     .then((rows) => rows[0]);
 
-  // Query settings once and use local defaults if not found
+  // Query settings once and fall back to safe defaults if not found
   let settings = await db
     .select()
     .from(userSettingsTable)
@@ -52,33 +68,38 @@ export const createTransactionServer = withErrorHandling(async (transactionData:
     };
   }
 
-  // Determine the effective tax status (local vs global)
-  let effectiveTaxStatus: "filer" | "non-filer" = "filer";
-  if (portfolio && !portfolio.useGlobalTax) {
-    effectiveTaxStatus = portfolio.taxStatus;
-  } else {
-    effectiveTaxStatus = settings.taxStatus;
-  }
+  // Determine the effective tax status (portfolio-local vs global)
+  const effectiveTaxStatus: "filer" | "non-filer" =
+    portfolio && !portfolio.useGlobalTax ? portfolio.taxStatus : settings.taxStatus;
 
-  if (transactionData.type === "dividend") {
-    if (
-      transactionData.commissionAndTaxes === undefined ||
-      transactionData.commissionAndTaxes === null ||
-      transactionData.commissionAndTaxes === 0
-    ) {
-      transactionData.commissionAndTaxes = effectiveTaxStatus === "filer" ? 15 : 30;
-      transactionData.isCommissionPercentage = true;
-    }
-  } else if (transactionData.type === "buy" || transactionData.type === "sell") {
-    if (
-      transactionData.commissionAndTaxes === undefined ||
-      transactionData.commissionAndTaxes === null ||
-      transactionData.commissionAndTaxes === 0
-    ) {
-      transactionData.commissionAndTaxes = settings.commissionRate;
-      transactionData.isCommissionPercentage = settings.isCommissionPercentage;
+  for (const item of items) {
+    if (item.type === "dividend") {
+      if (
+        item.commissionAndTaxes === undefined ||
+        item.commissionAndTaxes === null ||
+        item.commissionAndTaxes === 0
+      ) {
+        item.commissionAndTaxes = effectiveTaxStatus === "filer" ? 15 : 30;
+        item.isCommissionPercentage = true;
+      }
+    } else if (item.type === "buy" || item.type === "sell") {
+      if (
+        item.commissionAndTaxes === undefined ||
+        item.commissionAndTaxes === null ||
+        item.commissionAndTaxes === 0
+      ) {
+        item.commissionAndTaxes = settings.commissionRate;
+        item.isCommissionPercentage = settings.isCommissionPercentage;
+      }
     }
   }
+}
+
+export const createTransactionServer = withErrorHandling(async (transactionData: TransactionSchemaType) => {
+  const userId = await requireAuth();
+  await withPortfolioOwnership(transactionData.portfolioId, userId);
+
+  await applySettingsDefaults(userId, transactionData.portfolioId, [transactionData]);
 
   const formattedData = {
     ...transactionData,
@@ -116,62 +137,7 @@ export const createMultipleTransactions = withErrorHandling(async (transactions:
   const portfolioId = transactions[0].portfolioId;
   await withPortfolioOwnership(portfolioId, userId);
 
-  // Fetch portfolio settings scoped to user for security
-  const portfolio = await db
-    .select()
-    .from(portfolioTable)
-    .where(and(eq(portfolioTable.id, portfolioId), eq(portfolioTable.userId, userId)))
-    .limit(1)
-    .then((rows) => rows[0]);
-
-  // Query settings once and use local defaults if not found
-  let settings = await db
-    .select()
-    .from(userSettingsTable)
-    .where(eq(userSettingsTable.userId, userId))
-    .limit(1)
-    .then((rows) => rows[0]);
-
-  if (!settings) {
-    settings = {
-      userId,
-      taxStatus: "filer" as const,
-      commissionRate: 0.15,
-      isCommissionPercentage: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-  }
-
-  // Determine the effective tax status (local vs global)
-  let effectiveTaxStatus: "filer" | "non-filer" = "filer";
-  if (portfolio && !portfolio.useGlobalTax) {
-    effectiveTaxStatus = portfolio.taxStatus;
-  } else {
-    effectiveTaxStatus = settings.taxStatus;
-  }
-
-  transactions.forEach((transactionData) => {
-    if (transactionData.type === "dividend") {
-      if (
-        transactionData.commissionAndTaxes === undefined ||
-        transactionData.commissionAndTaxes === null ||
-        transactionData.commissionAndTaxes === 0
-      ) {
-        transactionData.commissionAndTaxes = effectiveTaxStatus === "filer" ? 15 : 30;
-        transactionData.isCommissionPercentage = true;
-      }
-    } else if (transactionData.type === "buy" || transactionData.type === "sell") {
-      if (
-        transactionData.commissionAndTaxes === undefined ||
-        transactionData.commissionAndTaxes === null ||
-        transactionData.commissionAndTaxes === 0
-      ) {
-        transactionData.commissionAndTaxes = settings.commissionRate;
-        transactionData.isCommissionPercentage = settings.isCommissionPercentage;
-      }
-    }
-  });
+  await applySettingsDefaults(userId, portfolioId, transactions);
 
   const sortedTransactions = sortTransactionsByDateAndType(transactions);
   await db.transaction(async (tx) => {

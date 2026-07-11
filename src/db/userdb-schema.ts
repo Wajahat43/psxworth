@@ -57,7 +57,7 @@ export const stockPerformanceTable = pgTable(
 export const userSettingsTable = pgTable("userSettingsTable", {
   userId: text("user_id").primaryKey(),
   taxStatus: text("tax_status", { enum: ["filer", "non-filer"] }).notNull().default("filer"),
-  commissionRate: real("commission_rate").notNull().default(0),
+  commissionRate: real("commission_rate").notNull().default(0.15),
   isCommissionPercentage: boolean("is_commission_percentage").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
@@ -70,4 +70,3 @@ export type UserSettings = typeof userSettingsTable.$inferSelect;
 export type Portfolio = UserPortfolio;
 export type Transaction = UserTransaction;
 export type StockPerformance = UserStockPerformance;
-export type UserSettingsType = UserSettings;

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { toast } from "@/components/molecules/Toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,44 +11,38 @@ import { SidebarTrigger } from "@/components/animate-ui/components/radix/sidebar
 import { updateUserSettings } from "@/actions/userSettings/userSettingsActions";
 import { UserSettings } from "@/db/schema";
 import { Shield, Percent, Save, Loader2, Info } from "lucide-react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { userSettingsSchema, UserSettingsFormValues } from "./formSchema";
 
 interface UserSettingsFormProps {
   initialSettings: UserSettings | null;
 }
 
-export default function UserSettingsForm({ initialSettings }: UserSettingsFormProps) {
-  const [taxStatus, setTaxStatus] = useState<"filer" | "non-filer">(initialSettings?.taxStatus ?? "filer");
-  const [commissionRate, setCommissionRate] = useState<number>(initialSettings?.commissionRate ?? 0.15);
-  const [isCommissionPercentage, setIsCommissionPercentage] = useState<boolean>(
-    initialSettings?.isCommissionPercentage ?? true
-  );
-  const [isSaving, setIsSaving] = useState(false);
+const DEFAULT_COMMISSION_RATE = 0.15;
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (commissionRate < 0) {
-      toast({
-        type: "error",
-        title: "Invalid Commission Rate",
-        description: "Commission rate cannot be negative.",
-      });
-      return;
-    }
-    if (isCommissionPercentage && commissionRate > 100) {
-      toast({
-        type: "error",
-        title: "Invalid Commission Rate",
-        description: "Percentage commission rate cannot exceed 100%.",
-      });
-      return;
-    }
-    setIsSaving(true);
+export default function UserSettingsForm({ initialSettings }: UserSettingsFormProps) {
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<UserSettingsFormValues>({
+    resolver: zodResolver(userSettingsSchema),
+    defaultValues: {
+      taxStatus: initialSettings?.taxStatus ?? "filer",
+      commissionRate: initialSettings?.commissionRate ?? DEFAULT_COMMISSION_RATE,
+      isCommissionPercentage: initialSettings?.isCommissionPercentage ?? true,
+    },
+  });
+
+  const taxStatus = watch("taxStatus");
+  const isCommissionPercentage = watch("isCommissionPercentage");
+
+  const onSubmit = async (values: UserSettingsFormValues) => {
     try {
-      const response = await updateUserSettings({
-        taxStatus,
-        commissionRate: Number(commissionRate) || 0,
-        isCommissionPercentage,
-      });
+      const response = await updateUserSettings(values);
 
       if (response.success) {
         toast({
@@ -68,8 +61,6 @@ export default function UserSettingsForm({ initialSettings }: UserSettingsFormPr
         type: "error",
         title: "An unexpected error occurred while saving settings.",
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -96,7 +87,7 @@ export default function UserSettingsForm({ initialSettings }: UserSettingsFormPr
             </p>
           </div>
 
-          <form onSubmit={handleSave} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Tax Profile Card */}
             <Card className="border-slate-800 bg-slate-900/40 shadow-md backdrop-blur-sm">
               <div className="flex flex-col space-y-1.5 p-6 pb-3">
@@ -122,11 +113,17 @@ export default function UserSettingsForm({ initialSettings }: UserSettingsFormPr
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-400 font-medium">Non-Filer</span>
-                    <Switch
-                      id="tax-status-toggle"
-                      checked={taxStatus === "filer"}
-                      onCheckedChange={(checked) => setTaxStatus(checked ? "filer" : "non-filer")}
-                      className="data-[state=checked]:bg-primary"
+                    <Controller
+                      name="taxStatus"
+                      control={control}
+                      render={({ field }) => (
+                        <Switch
+                          id="tax-status-toggle"
+                          checked={field.value === "filer"}
+                          onCheckedChange={(checked) => field.onChange(checked ? "filer" : "non-filer")}
+                          className="data-[state=checked]:bg-primary"
+                        />
+                      )}
                     />
                     <span className="text-xs text-slate-200 font-semibold">Filer</span>
                   </div>
@@ -165,36 +162,41 @@ export default function UserSettingsForm({ initialSettings }: UserSettingsFormPr
                         step="any"
                         min="0"
                         max={isCommissionPercentage ? "100" : undefined}
-                        placeholder="0.15"
-                        value={commissionRate}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value);
-                          setCommissionRate(isNaN(val) ? 0 : val);
-                        }}
+                        placeholder={String(DEFAULT_COMMISSION_RATE)}
+                        {...register("commissionRate")}
                         className="bg-slate-950/50 border-slate-800 text-slate-100 pr-8 focus:ring-primary focus:border-primary"
                       />
                       <div className="absolute right-3 top-2.5 text-xs text-slate-500">
                         {isCommissionPercentage ? "%" : "PKR"}
                       </div>
                     </div>
+                    {errors.commissionRate && (
+                      <p className="text-xs text-red-400">{errors.commissionRate.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="commission-type" className="text-sm font-semibold text-slate-200">
                       Commission Type
                     </Label>
-                    <Select
-                      value={isCommissionPercentage ? "percentage" : "flat"}
-                      onValueChange={(val) => setIsCommissionPercentage(val === "percentage")}
-                    >
-                      <SelectTrigger id="commission-type" className="bg-slate-950/50 border-slate-800 text-slate-100">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
-                        <SelectItem value="percentage">Percentage (%)</SelectItem>
-                        <SelectItem value="flat">Flat Fee (PKR)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Controller
+                      name="isCommissionPercentage"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value ? "percentage" : "flat"}
+                          onValueChange={(val) => field.onChange(val === "percentage")}
+                        >
+                          <SelectTrigger id="commission-type" className="bg-slate-950/50 border-slate-800 text-slate-100">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                            <SelectItem value="percentage">Percentage (%)</SelectItem>
+                            <SelectItem value="flat">Flat Fee (PKR)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                 </div>
 
@@ -211,10 +213,10 @@ export default function UserSettingsForm({ initialSettings }: UserSettingsFormPr
             <div className="flex justify-end pt-2">
               <Button
                 type="submit"
-                disabled={isSaving}
+                disabled={isSubmitting}
                 className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium px-6 py-2 rounded-md shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
               >
-                {isSaving ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Saving...
