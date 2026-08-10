@@ -11,48 +11,41 @@ export const CustomToast = (props: CustomToastProps) => {
   const { id, title, description, config } = props;
   const {
     icon: Icon,
-    bgGradient,
-    borderColor,
-    shadowColor,
-    iconGradient,
-    textColor,
-    progressGradient,
-    animate,
+    rootClassName,
+    iconWrapperClassName,
+    iconClassName,
+    titleClassName,
+    descriptionClassName,
   } = config;
 
   return (
     <div
       className={cn(
-        "bg-slate-800/95 backdrop-blur-sm border rounded-xl p-2 shadow-2xl min-w-[320px] max-w-md",
-        borderColor,
-        shadowColor
+        "min-w-0 w-full max-w-md rounded-2xl border px-4 py-3 backdrop-blur-xl sm:min-w-[320px]",
+        rootClassName
       )}
     >
       <div className="flex items-start gap-3">
         <div
-          className={cn("flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center", bgGradient, {
-            "animate-pulse": animate,
-          })}
+          className={cn(
+            "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl",
+            iconWrapperClassName
+          )}
         >
-          <Icon className={cn("w-5 h-5", iconGradient)} />
+          <Icon className={cn("h-5 w-5", iconClassName)} />
         </div>
-        <div className="flex-1 min-w-0 flex flex-col items-start justify-center">
-          <div className={cn("font-semibold text-sm", textColor)}>{title}</div>
-          {description && <div className="text-slate-300 text-xs leading-relaxed mt-1">{description}</div>}
+        <div className="flex min-w-0 flex-1 flex-col items-start justify-center pt-0.5">
+          <div className={cn("text-sm font-medium leading-5", titleClassName)}>{title}</div>
+          {description && <div className={cn("mt-1 text-sm leading-5", descriptionClassName)}>{description}</div>}
         </div>
         <button
           onClick={() => toast.dismiss(id)}
-          className="flex-shrink-0 w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center"
+          type="button"
+          aria-label="Dismiss notification"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white/5 text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
         >
-          <X className="w-4 h-4 text-gray-100/70" />
+          <X className="h-4 w-4" />
         </button>
-      </div>
-      <div className="mt-3 h-1 bg-black/20 rounded-full overflow-hidden">
-        <div
-          className={cn("h-full rounded-full", progressGradient, {
-            "animate-pulse": animate,
-          })}
-        ></div>
       </div>
     </div>
   );

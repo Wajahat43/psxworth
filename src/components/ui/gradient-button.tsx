@@ -105,7 +105,7 @@ const spanVariants = cva(
   }
 );
 
-interface GradientButtonProps
+export interface GradientButtonProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "disabled">,
     VariantProps<typeof gradientButtonVariants> {
   children: React.ReactNode;

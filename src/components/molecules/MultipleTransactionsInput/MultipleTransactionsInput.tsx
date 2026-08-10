@@ -1,6 +1,5 @@
 import { FloatingLabelTextarea } from "@/components/ui/floating-label-textarea";
-import GradientButton from "@/components/ui/gradient-button";
-import SpinningLoader from "@/components/ui/spinning-loader";
+import { LoadingGradientButton } from "@/components/ui/loading-gradient-button";
 import { Zap, ShieldCheck } from "lucide-react";
 import React, { useState } from "react";
 
@@ -68,21 +67,23 @@ Dividend received: Rs. 25/share on 300 shares of PSO, total: Rs. 7,500 (no fees)
           </div>
         </div>
 
-        <GradientButton
+        <LoadingGradientButton
           type="submit"
-          disabled={!inputData.trim() || isLoading}
+          disabled={!inputData.trim()}
+          isLoading={isLoading}
           variant="cyanBlue"
           fullWidth
           className="shadow-lg shadow-cyan-500/10"
+          loadingMessages={[
+            "Reading your broker paste",
+            "Finding buys, sells & dividends",
+            "Matching PSX tickers",
+            "Pulling dates, prices & fees",
+            "Polishing the results",
+          ]}
         >
-          {isLoading ? (
-            <div className="flex gap-2 items-center">
-              <SpinningLoader size="xxs" /> Analyzing...
-            </div>
-          ) : (
-            "Process Data"
-          )}
-        </GradientButton>
+          Process Data
+        </LoadingGradientButton>
       </div>
     </form>
   );

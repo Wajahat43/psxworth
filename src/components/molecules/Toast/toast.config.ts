@@ -1,45 +1,47 @@
-import { CheckCircle, AlertCircle, Info, Sparkles } from "lucide-react";
-import { ToastConfig } from "./types";
+import { AlertCircle, AlertTriangle, CheckCircle, Info, Sparkles } from "lucide-react";
+import { ToastConfig, ToastType } from "./types";
 
-export const toastConfig: Record<"success" | "error" | "info" | "loading", ToastConfig> = {
+const sharedToastClasses = {
+  rootClassName: "border-white/10 bg-zinc-950/92 shadow-[0_20px_60px_rgba(0,0,0,0.45)]",
+  titleClassName: "text-white/95",
+  descriptionClassName: "text-white/60",
+} satisfies Pick<ToastConfig, "rootClassName" | "titleClassName" | "descriptionClassName">;
+
+export const toastConfig: Record<ToastType, ToastConfig> = {
+  default: {
+    ...sharedToastClasses,
+    icon: Info,
+    iconWrapperClassName: "bg-white/5 ring-1 ring-inset ring-white/10",
+    iconClassName: "text-white/70",
+  },
   success: {
+    ...sharedToastClasses,
     icon: CheckCircle,
-    bgGradient: "bg-green-500",
-    borderColor: "border-green-500/30",
-    shadowColor: "shadow-green-500/20",
-    iconGradient: "text-gray-100",
-    textColor: "text-gray-100",
-    progressGradient: "bg-green-500",
-    animate: false,
+    iconWrapperClassName: "bg-emerald-500/10 ring-1 ring-inset ring-emerald-400/20",
+    iconClassName: "text-emerald-300",
   },
   error: {
+    ...sharedToastClasses,
     icon: AlertCircle,
-    bgGradient: "bg-red-500",
-    borderColor: "border-red-500/30",
-    shadowColor: "shadow-red-500/20",
-    iconGradient: "text-gray-100",
-    textColor: "text-gray-100",
-    progressGradient: "bg-red-500",
-    animate: true,
+    iconWrapperClassName: "bg-rose-500/10 ring-1 ring-inset ring-rose-400/20",
+    iconClassName: "text-rose-300",
   },
   info: {
+    ...sharedToastClasses,
     icon: Info,
-    bgGradient: "bg-blue-500",
-    borderColor: "border-blue-500/30",
-    shadowColor: "shadow-blue-500/20",
-    iconGradient: "text-gray-100",
-    textColor: "text-gray-100",
-    progressGradient: "bg-blue-500",
-    animate: false,
+    iconWrapperClassName: "bg-sky-500/10 ring-1 ring-inset ring-sky-400/20",
+    iconClassName: "text-sky-300",
+  },
+  warning: {
+    ...sharedToastClasses,
+    icon: AlertTriangle,
+    iconWrapperClassName: "bg-amber-500/10 ring-1 ring-inset ring-amber-400/20",
+    iconClassName: "text-amber-300",
   },
   loading: {
+    ...sharedToastClasses,
     icon: Sparkles,
-    bgGradient: "bg-purple-500",
-    borderColor: "border-purple-500/30",
-    shadowColor: "shadow-purple-500/20",
-    iconGradient: "text-gray-100",
-    textColor: "text-gray-100",
-    progressGradient: "bg-purple-500",
-    animate: true,
+    iconWrapperClassName: "bg-amber-500/10 ring-1 ring-inset ring-amber-400/20",
+    iconClassName: "text-amber-300",
   },
 };
