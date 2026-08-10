@@ -1,8 +1,13 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/animate-ui/components/animate/tooltip";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { toLocalDate } from "@/types/localDate";
 import { transactionSchema, TransactionSchemaType } from "@/types";
+import { toLocalDate } from "@/types/localDate";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Edit3, Check, Plus, Loader2, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
 import React, { useEffect } from "react";
@@ -49,10 +54,7 @@ export function TransactionPreviewCard({
     mode: "onBlur",
   });
 
-  const {
-    control,
-    watch,
-  } = hookForm;
+  const { control, watch } = hookForm;
 
   const watchedTransaction = watch();
   const validationResult = transactionSchema.safeParse(watchedTransaction);
@@ -67,6 +69,11 @@ export function TransactionPreviewCard({
   }, [JSON.stringify(watchedTransaction)]);
 
   const isValid = validationResult.success;
+  const fieldErrors: ErrorsRecord = validationResult.success
+    ? {}
+    : Object.fromEntries(
+        validationResult.error.issues.map((issue) => [String(issue.path[0] ?? ""), { message: issue.message }])
+      );
 
   return (
     <FormProvider {...hookForm}>
@@ -80,65 +87,70 @@ export function TransactionPreviewCard({
         >
           <div className="flex items-center justify-between gap-2 md:gap-8">
             <TransactionSummary transaction={watchedTransaction} />
-            <div className="flex items-center gap-1">
-              {!isProcessed && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={onRemoveTransaction}
-                      className="h-8 w-8 border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-red-900/40 hover:text-red-100"
-                      disabled={isLoading || isEditing}
-                      aria-label="Remove transaction"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Remove</TooltipContent>
-                </Tooltip>
-              )}
+            <TooltipProvider>
+              <div className="flex items-center gap-1">
+                {!isProcessed && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={onRemoveTransaction}
+                        className="h-8 w-8 border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-red-900/40 hover:text-red-100"
+                        disabled={isLoading || isEditing}
+                        aria-label="Remove transaction"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Remove</TooltipContent>
+                  </Tooltip>
+                )}
 
-              {!isProcessed && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsEditing(!isEditing)}
-                      className="h-8 w-8 border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-blue-900/40 hover:text-slate-100"
-                      disabled={isLoading}
-                      aria-label={isEditing ? "Done editing" : "Edit transaction"}
-                    >
-                      {isEditing ? <Check className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{isEditing ? "Done" : "Edit"}</TooltipContent>
-                </Tooltip>
-              )}
+                {!isProcessed && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="h-8 w-8 border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-blue-900/40 hover:text-slate-100"
+                        disabled={isLoading}
+                        aria-label={isEditing ? "Done editing" : "Edit transaction"}
+                      >
+                        {isEditing ? <Check className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{isEditing ? "Done" : "Edit"}</TooltipContent>
+                  </Tooltip>
+                )}
 
-              <Tooltip>
-                {/* Span wrapper so the tooltip still fires when the button is disabled
+                <Tooltip>
+                  {/* Span wrapper so the tooltip still fires when the button is disabled
                     (disabled <button> elements swallow pointer events). */}
-                <TooltipTrigger asChild>
-                  <span className="inline-flex">
-                    <Button
-                      size="icon"
-                      variant={isProcessed ? "default" : isValid ? "default" : "destructive"}
-                      onClick={() => onSubmitTransaction(watchedTransaction)}
-                      disabled={isLoading || !isValid || isEditing || isProcessed}
-                      className={twMerge("h-8 w-8", isProcessed && "bg-background border-primary hover:bg-primary/80")}
-                      aria-label={getButtonAriaLabel(isLoading, isValid, isProcessed, errors)}
-                    >
-                      {getButtonIcon(isLoading, isValid, isProcessed)}
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[240px]">
-                  {getButtonTooltip(isLoading, isValid, isProcessed, errors)}
-                </TooltipContent>
-              </Tooltip>
-            </div>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <Button
+                        size="icon"
+                        variant={isProcessed ? "default" : isValid ? "default" : "destructive"}
+                        onClick={() => onSubmitTransaction(watchedTransaction)}
+                        disabled={isLoading || !isValid || isEditing || isProcessed}
+                        className={twMerge(
+                          "h-8 w-8",
+                          isProcessed && "bg-background border-primary hover:bg-primary/80"
+                        )}
+                        aria-label={getButtonAriaLabel(isLoading, isValid, isProcessed, fieldErrors)}
+                      >
+                        {getButtonIcon(isLoading, isValid, isProcessed)}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[240px]">
+                    {getButtonTooltip(isLoading, isValid, isProcessed, fieldErrors)}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </div>
 
           {isEditing && !isProcessed && (
