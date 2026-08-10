@@ -6,7 +6,7 @@ import useBreakpoint from "@/utils/hooks/useBreakpoints";
 import { useTransactions } from "@/utils/hooks/useTransactionData";
 import { useQuery } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
-import React from "react";
+import React, { useState } from "react";
 import { DataTable } from "./components/DataTable";
 import {
   getChangeSinceTransactionPct,
@@ -20,6 +20,11 @@ interface TransactionsTableProps {
   portfolioId: number;
 }
 
+interface TransactionFilters {
+  types?: string[];
+  symbols?: string[];
+}
+
 export const TransactionsTable = (props: TransactionsTableProps) => {
   const { portfolioId } = props;
 
@@ -28,7 +33,16 @@ export const TransactionsTable = (props: TransactionsTableProps) => {
 
   const [shouldShowFullTable, setShouldShowFullTable] = React.useState(!shouldShowMobileLayout);
 
-  const { transactions } = useTransactions(portfolioId);
+  const [pageState, setPageState] = useState({
+    page: 1,
+    pageSize: 10,
+  });
+
+  const [filters, setFilters] = React.useState<TransactionFilters>({});
+  const [sorting, setSorting] = React.useState<{ key: string, order: "asc" | "desc" } | null>(null);
+
+  const { transactions } = useTransactions(portfolioId, pageState.page, pageState.pageSize, filters, sorting);
+  const totalPages = transactions?.data?.totalPages ?? 0;
   const pricesQuery = useQuery({
     ...stockPriceQueries.latestAll(),
     select: (data) => {
@@ -45,7 +59,7 @@ export const TransactionsTable = (props: TransactionsTableProps) => {
   };
 
   const pricesBySymbol = pricesQuery.data ?? {};
-  const allTransactions = (transactions.data as Transaction[]) || [];
+  const allTransactions = transactions.data?.items || [];
   const columns = shouldShowFullTable
     ? getTransactionsTableDesktopColumns(pricesBySymbol)
     : getTransactionsTableMobileColumns();
@@ -82,6 +96,15 @@ export const TransactionsTable = (props: TransactionsTableProps) => {
         shouldShowMobileLayout={!shouldShowFullTable}
         onToggleView={handleToggle}
         renderMobileSubRow={!shouldShowFullTable ? renderMobileSubRow : undefined}
+        pageState={pageState}
+        setPageState={setPageState}
+        totalPages={totalPages}
+        filters={filters}
+        setFilters={setFilters}
+        sorting={sorting}
+        setSorting={setSorting}
+        availableSymbols={transactions.data?.availableSymbols ?? []}
+
       />
     </>
   );

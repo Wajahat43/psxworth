@@ -77,6 +77,7 @@ const MotionButton = motion.create(Button);
 const TableHeaderCell = ({ column, heading }: { column: any; heading: string }) => {
   "use no memo";
   const sortDirection = column.getIsSorted();
+  const canSort = column.getCanSort();
 
   // Function to get the appropriate icon
   const getSortIcon = () => {
@@ -90,6 +91,14 @@ const TableHeaderCell = ({ column, heading }: { column: any; heading: string }) 
     }
   };
   const isAscending = sortDirection === "asc";
+
+  if (!canSort) {
+    return (
+      <div className="pl-2 -ml-[0.7rem] relative h-10 flex items-center">
+        <p className="text-gray-100 font-semibold text-left mr-2">{heading}</p>
+      </div>
+    );
+  }
 
   return (
     <MotionButton
