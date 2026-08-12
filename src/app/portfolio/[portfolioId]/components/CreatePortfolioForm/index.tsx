@@ -11,6 +11,7 @@ import { motion } from "motion/react";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { createPortfolioSchema, updatePortfolioSchema } from "./formSchema";
+import { Switch } from "@/components/ui/switch";
 
 const portfolioEmojis = [
   "🚀",
@@ -70,6 +71,8 @@ export const CreatePortfolioForm = ({ onSuccess, portfolio }: CreatePortfolioFor
     title: string;
     emoji: string;
     backgroundColor: string;
+    useGlobalTax: boolean;
+    taxStatus: "filer" | "non-filer";
     id?: number;
   };
 
@@ -88,6 +91,8 @@ export const CreatePortfolioForm = ({ onSuccess, portfolio }: CreatePortfolioFor
       title: portfolio?.title || "",
       emoji: portfolio?.emoji || portfolioEmojis[0],
       backgroundColor: portfolio?.backgroundColor || portfolioColors[0].hex,
+      useGlobalTax: portfolio?.useGlobalTax ?? true,
+      taxStatus: portfolio?.taxStatus ?? "filer",
       id: portfolio?.id,
     },
   });
@@ -95,13 +100,15 @@ export const CreatePortfolioForm = ({ onSuccess, portfolio }: CreatePortfolioFor
   /* eslint-disable-next-line react-hooks/incompatible-library -- React Hook Form's watch() cannot be memoized safely; React Compiler skips this component */
   const selectedEmoji = watch("emoji");
   const selectedColorHex = watch("backgroundColor");
+  const useGlobalTax = watch("useGlobalTax");
+  const taxStatus = watch("taxStatus");
 
   const onSubmit = (data: PortfolioFormValues) => {
     if (portfolio) {
       updatePortfolioMutation.mutate({ ...portfolio, ...data, id: portfolio.id }, { onSuccess });
     } else {
-      const { title, emoji, backgroundColor } = data;
-      createPortfolioMutation.mutate({ title, emoji, backgroundColor } as any, { onSuccess });
+      const { title, emoji, backgroundColor, useGlobalTax, taxStatus } = data;
+      createPortfolioMutation.mutate({ title, emoji, backgroundColor, useGlobalTax, taxStatus }, { onSuccess });
     }
   };
 
@@ -207,6 +214,63 @@ export const CreatePortfolioForm = ({ onSuccess, portfolio }: CreatePortfolioFor
             ))}
           </div>
         </div>
+      </motion.div>
+
+      {/* Tax Settings */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.55, duration: 0.5 }}
+        className="space-y-4 rounded-lg border border-white/10 bg-blue-900/20 p-4 backdrop-blur-sm"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Label className="text-sm font-semibold text-slate-200 block">
+              Use Global Tax Settings
+            </Label>
+            <p className="text-xs text-slate-400">
+              When enabled, this portfolio will use your account&apos;s global tax settings.
+            </p>
+          </div>
+          <Switch
+            id="portfolio-use-global-tax"
+            checked={useGlobalTax}
+            onCheckedChange={(checked) => setValue("useGlobalTax", checked, { shouldValidate: true })}
+            className="data-[state=checked]:bg-blue-600"
+          />
+        </div>
+
+        {!useGlobalTax && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="pt-2 border-t border-white/5 space-y-4"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg bg-slate-950/40 p-3 border border-slate-800/40">
+              <div className="space-y-1">
+                <Label className="text-sm font-semibold text-slate-200">
+                  Local Tax Status: <span className="text-blue-400 uppercase font-bold">{taxStatus}</span>
+                </Label>
+                <p className="text-xs text-slate-400">
+                  {taxStatus === "filer"
+                    ? "Local filer status applies a 15% withholding tax rate on dividends."
+                    : "Local non-filer status applies a 30% withholding tax rate on dividends."}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400 font-medium">Non-Filer</span>
+                <Switch
+                  id="portfolio-local-tax-status"
+                  checked={taxStatus === "filer"}
+                  onCheckedChange={(checked) => setValue("taxStatus", checked ? "filer" : "non-filer", { shouldValidate: true })}
+                  className="data-[state=checked]:bg-blue-600"
+                />
+                <span className="text-xs text-blue-400 font-semibold">Filer</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       <motion.div

@@ -6,6 +6,8 @@ export const portfolioTable = pgTable("portfolioTable", {
   userId: text("user_id").notNull(),
   backgroundColor: text("background_color").notNull(),
   emoji: text("emoji").notNull(),
+  useGlobalTax: boolean("use_global_tax").notNull().default(true),
+  taxStatus: text("tax_status", { enum: ["filer", "non-filer"] }).notNull().default("filer"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
 });
@@ -52,9 +54,19 @@ export const stockPerformanceTable = pgTable(
   (table) => [unique().on(table.portfolioId, table.stockSymbol)]
 );
 
+export const userSettingsTable = pgTable("userSettingsTable", {
+  userId: text("user_id").primaryKey(),
+  taxStatus: text("tax_status", { enum: ["filer", "non-filer"] }).notNull().default("filer"),
+  commissionRate: real("commission_rate").notNull().default(0.15),
+  isCommissionPercentage: boolean("is_commission_percentage").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+});
+
 export type UserPortfolio = typeof portfolioTable.$inferSelect;
 export type UserTransaction = typeof transactionTable.$inferSelect;
 export type UserStockPerformance = typeof stockPerformanceTable.$inferSelect;
+export type UserSettings = typeof userSettingsTable.$inferSelect;
 export type Portfolio = UserPortfolio;
 export type Transaction = UserTransaction;
 export type StockPerformance = UserStockPerformance;

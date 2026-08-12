@@ -16,7 +16,7 @@ import {
 } from "@/components/animate-ui/components/radix/sidebar";
 import { Button } from "@/components/ui/button";
 import { Portfolio } from "@/db/schema";
-import { HelpCircle, Loader2, Mail, Plus } from "lucide-react";
+import { HelpCircle, Loader2, Mail, Plus, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -134,9 +134,25 @@ export const PortfoliosSidebar = ({ portfolioList, children }: PortfoliosSidebar
           </SidebarGroup>
         </SidebarContent>
 
-        {/* Footer with Install Button and User Account */}
-        <SidebarFooter className="shrink-0 border-t border-sidebar-border/70 bg-sidebar-accent/10 px-3 py-4">
+        {/* Footer with Install Button, Settings and User Account */}
+        <SidebarFooter className="shrink-0 border-t border-sidebar-border/70 bg-sidebar-accent/10 px-3 py-4 gap-2">
           <SidebarInstallButton />
+          
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/settings"}
+                className="rounded-md border border-transparent hover:bg-sidebar-accent data-[active=true]:border-primary/60 data-[active=true]:bg-sidebar-accent/80"
+              >
+                <Link href="/settings">
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+
           <SidebarUserSection />
         </SidebarFooter>
       </Sidebar>

@@ -6,7 +6,7 @@ import {
 } from "@/actions/portfolioPerformance/portfolioPerformance";
 import { getPostHogServer } from "@/app/posthog-server";
 import { db } from "@/db";
-import { transactionTable } from "@/db/schema";
+import { portfolioTable, transactionTable, userSettingsTable } from "@/db/schema";
 import { createTracedModel } from "@/lib/ai/aiClient";
 import { parseTransactionsAIResponse } from "@/lib/ai/helpers";
 import { TRANSACTION_PARSER_SYSTEM_PROMPT } from "@/lib/ai/prompts";
@@ -15,15 +15,91 @@ import { Transaction, TransactionSchemaType } from "@/types";
 import { MULTIPLE_TRANSACTIONS_CREATED, TRANSACTION_CREATED, TRANSACTION_DELETED } from "@/utils/posthog/events";
 import { generateObject } from "ai";
 import "dotenv/config";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { unstable_cache, updateTag } from "next/cache";
 import { createResponse } from "../utils";
 import { requireAuth, withPortfolioOwnership, withErrorHandling } from "../utils/middleware";
 import { sortTransactionsByDateAndType } from "./helpers";
 
+/**
+ * Fetches the user's global settings and the portfolio's tax override, then
+ * mutates each item in-place to fill in missing commissionAndTaxes /
+ * isCommissionPercentage values using the effective tax rules.
+ *
+ * Dividend tax rates (percentage of gross dividend):
+ *   - Filer:     15 %
+ *   - Non-filer: 30 %
+ *
+ * Buy / Sell commissions default to the user's saved commissionRate setting.
+ *
+ * @param userId      - Authenticated user ID (already verified by the caller).
+ * @param portfolioId - Portfolio that owns the transactions.
+ * @param items       - Transaction payloads to mutate in-place.
+ */
+async function applySettingsDefaults(
+  userId: string,
+  portfolioId: number,
+  items: TransactionSchemaType[]
+): Promise<void> {
+  // Fetch portfolio settings scoped to user for security
+  const portfolio = await db
+    .select()
+    .from(portfolioTable)
+    .where(and(eq(portfolioTable.id, portfolioId), eq(portfolioTable.userId, userId)))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  // Query settings once and fall back to safe defaults if not found
+  let settings = await db
+    .select()
+    .from(userSettingsTable)
+    .where(eq(userSettingsTable.userId, userId))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  if (!settings) {
+    settings = {
+      userId,
+      taxStatus: "filer" as const,
+      commissionRate: 0.15,
+      isCommissionPercentage: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+
+  // Determine the effective tax status (portfolio-local vs global)
+  const effectiveTaxStatus: "filer" | "non-filer" =
+    portfolio && !portfolio.useGlobalTax ? portfolio.taxStatus : settings.taxStatus;
+
+  for (const item of items) {
+    if (item.type === "dividend") {
+      if (
+        item.commissionAndTaxes === undefined ||
+        item.commissionAndTaxes === null ||
+        item.commissionAndTaxes === 0
+      ) {
+        item.commissionAndTaxes = effectiveTaxStatus === "filer" ? 15 : 30;
+        item.isCommissionPercentage = true;
+      }
+    } else if (item.type === "buy" || item.type === "sell") {
+      if (
+        item.commissionAndTaxes === undefined ||
+        item.commissionAndTaxes === null ||
+        item.commissionAndTaxes === 0
+      ) {
+        item.commissionAndTaxes = settings.commissionRate;
+        item.isCommissionPercentage = settings.isCommissionPercentage;
+      }
+    }
+  }
+}
+
 export const createTransactionServer = withErrorHandling(async (transactionData: TransactionSchemaType) => {
   const userId = await requireAuth();
   await withPortfolioOwnership(transactionData.portfolioId, userId);
+
+  await applySettingsDefaults(userId, transactionData.portfolioId, [transactionData]);
 
   const formattedData = {
     ...transactionData,
@@ -47,14 +123,22 @@ export const createTransactionServer = withErrorHandling(async (transactionData:
 });
 
 export const createMultipleTransactions = withErrorHandling(async (transactions: TransactionSchemaType[]) => {
-  const userId = await requireAuth();
-  await withPortfolioOwnership(transactions[0].portfolioId, userId);
-
   if (!transactions || transactions.length === 0) {
     throw new Error("No transactions provided");
   }
 
+  const userId = await requireAuth();
+  
+  const uniquePortfolioIds = new Set(transactions.map((t) => t.portfolioId));
+  if (uniquePortfolioIds.size !== 1) {
+    throw new Error("All transactions in a batch must belong to the same portfolio");
+  }
+
   const portfolioId = transactions[0].portfolioId;
+  await withPortfolioOwnership(portfolioId, userId);
+
+  await applySettingsDefaults(userId, portfolioId, transactions);
+
   const sortedTransactions = sortTransactionsByDateAndType(transactions);
   await db.transaction(async (tx) => {
     const formattedTransactions = sortedTransactions.map((t) => ({
