@@ -27,6 +27,8 @@ import {
 } from "../components/TransactionFormFields";
 import { TransactionSubmitButton } from "../components/TransactionSubmitButton";
 import { TransactionSummary } from "../components/TransactionSummary";
+import { useDividendSharesAutoFill } from "@/utils/hooks/useDividendSharesAutoFill";
+import { useEffect, useRef } from "react";
 
 interface TransactionFormProps {
   onSuccess?: () => void;
@@ -40,7 +42,7 @@ export default function TransactionForm(props: TransactionFormProps) {
 
   const { onSuccess, portfolioId, editTransaction, editTransactionId } = props;
 
-  const { createTransaction, updateTransaction } = useTransactions(portfolioId);
+  const { createTransaction, updateTransaction, transactions } = useTransactions(portfolioId);
 
   // Get the appropriate schema and type based on transaction type
   const editTransactionType = editTransaction?.type || "buy";
@@ -91,6 +93,33 @@ export default function TransactionForm(props: TransactionFormProps) {
       });
     }
   };
+  
+
+  const stockSymbol = form.watch("stockSymbol");
+
+const autoFilledShares = useDividendSharesAutoFill(
+  stockSymbol,
+  isDividend,
+  transactions.data ?? []
+);
+
+const hasUserEdited = useRef(false);
+
+useEffect(() => {
+  hasUserEdited.current = false;
+}, [stockSymbol, isDividend]);
+
+useEffect(() => {
+  if (editTransaction || !isDividend) return;
+
+  if (!hasUserEdited.current) {
+    if (autoFilledShares !== null) {
+      form.setValue("numberOfShares", autoFilledShares, { shouldDirty: false });
+    } else {
+      form.setValue("numberOfShares", 0, { shouldDirty: false });
+    }
+  }
+}, [autoFilledShares, editTransaction, isDividend, form]);
 
   return (
     <Form {...form}>
@@ -110,7 +139,17 @@ export default function TransactionForm(props: TransactionFormProps) {
         <FormField
           control={form.control}
           name="numberOfShares"
-          render={({ field }) => <SharesCountInput field={field} />}
+          render={({ field }) => (
+            <SharesCountInput
+              field={{
+                ...field,
+                onChange: (e) => {
+                  hasUserEdited.current = true;
+                  field.onChange(e);
+                },
+              }}
+            />
+          )}
         />
 
         {/* Conditionally render pricePerShare for buy/sell or dividendPerShare for dividend */}

@@ -3,7 +3,7 @@
 import { withErrorHandling, requireAuth } from "@/actions/utils/middleware";
 import { dataDb } from "@/db";
 import { payouts } from "@/db/datadb-schema";
-import { and, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 
 type GetUpcomingPayoutsParams = {
   symbols: string[];
@@ -92,3 +92,36 @@ export const getAllUpcomingPayouts = withErrorHandling(async ({ from, to, limit 
 
   return rows as UpcomingPayoutRecord[];
 });
+
+/**
+ * Fetches the most recent dividend payout for a given stock symbol.
+ * Used to determine the ex-dividend date for auto-filling shares in the transaction form.
+ * Only looks at past payouts (exDate <= today) to find the latest completed dividend cycle.
+ */
+
+export const getMostRecentDividendPayoutForSymbol = withErrorHandling(
+  async (symbol: string) => {
+    await requireAuth();
+
+    if (!symbol) return null;
+
+    const rows = await dataDb
+      .select({
+        symbol: payouts.symbol,
+        exDate: payouts.exDate,
+        actionType: payouts.actionType,
+      })
+      .from(payouts)
+      .where(
+        and(
+          eq(payouts.symbol, symbol),
+          eq(payouts.actionType, "dividend"),
+          lte(payouts.exDate, new Date())
+        )
+      )
+      .orderBy(desc(payouts.exDate))
+      .limit(1);
+
+    return rows[0] ?? null;
+  }
+);
