@@ -1,5 +1,6 @@
 "use client";
 
+import { ErrorState } from "@/components/molecules/ErrorState";
 import type { ApexOptions } from "apexcharts";
 import { Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -153,9 +154,11 @@ export function HistoricalReturnsChart({ portfolioId }: HistoricalReturnsChartPr
             </div>
           </div>
         ) : error ? (
-          <div className="flex h-[400px] items-center justify-center bg-slate-900 text-red-400">
-            {error instanceof Error ? error.message : "Failed to load data"}
-          </div>
+          <ErrorState
+            title="Failed to load historical returns"
+            description="Failed to load historical returns data. Please try again later."
+            className="h-[400px] rounded-none border-0 bg-slate-900 shadow-none"
+          />
         ) : !hasData ? (
           <div className="flex h-[400px] items-center justify-center bg-slate-900 text-gray-400">
             No data available for the selected period

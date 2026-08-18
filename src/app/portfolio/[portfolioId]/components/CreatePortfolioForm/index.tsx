@@ -143,11 +143,11 @@ export const CreatePortfolioForm = ({ onSuccess, portfolio }: CreatePortfolioFor
               {...register("title")}
               placeholder="My Investment Portfolio"
               className={`h-11 rounded-md border-white/10 bg-blue-950/30 text-base text-gray-100 shadow-sm backdrop-blur-sm placeholder:text-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 ${
-                errors.title ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                errors.title ? "border-destructive focus:border-destructive focus:ring-destructive/20" : ""
               }`}
             />
           </motion.div>
-          {errors.title?.message && <p className="mt-1 text-sm text-red-400">{errors.title.message as string}</p>}
+          {errors.title?.message && <p className="mt-1 text-sm text-destructive">{errors.title.message as string}</p>}
 
           {portfolio && <input type="hidden" {...register("id")} value={portfolio.id} />}
         </div>

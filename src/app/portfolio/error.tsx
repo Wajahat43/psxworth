@@ -1,25 +1,26 @@
 "use client";
 
+import { ErrorState } from "@/components/molecules/ErrorState";
+import { Button } from "@/components/ui/button";
 import posthog from "posthog-js";
 import { useEffect } from "react";
 
-export default function Error({
-  error,
-}: {
-  error: Error & { digest?: string };
-}) {
+export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     posthog.captureException(error);
   }, [error]);
 
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center">
-      <h2 className="text-2xl font-semibold text-red-400">
-        Something went wrong!
-      </h2>
-      <p className="text-gray-600">Please try again later.</p>
-      {/* Display the error message for debugging */}
-      <p className="text-sm text-gray-400 mt-2">{error.message}</p>
+    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-10">
+      <ErrorState
+        title="Portfolio error"
+        description="We couldn't load this portfolio. Please try again later."
+        action={
+          <Button onClick={reset} variant="destructive">
+            Try again
+          </Button>
+        }
+      />
     </div>
   );
 }

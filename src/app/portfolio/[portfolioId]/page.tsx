@@ -1,9 +1,11 @@
 import { getPortfolios } from "@/actions/portfolio/portfolioActions";
 import { getDetailedPortfolioPerformance } from "@/actions/portfolioPerformance/portfolioPerformance";
-import { Portfolio } from "@/db/schema";
+import { ErrorState } from "@/components/molecules/ErrorState";
 import CommunityPromptHandler from "@/components/organisms/CommunityJoinPrompt/CommunityPromptHandler";
 import { Button } from "@/components/ui/button";
+import { Portfolio } from "@/db/schema";
 import { Metadata } from "next";
+import Link from "next/link";
 import { PortfolioCookieSetter } from "./components/PortfolioCookieSetter";
 import { PortfolioPageTabs } from "./components/PortfolioPageTabs";
 
@@ -29,15 +31,20 @@ type PortfolioPageProps = {
 export default async function PortfolioPage({ params }: PortfolioPageProps) {
   const { portfolioId: portfolioIdString } = await params;
   const portfolioId = Number(portfolioIdString);
+  const retryAction = (
+    <Button asChild>
+      <Link href="/portfolio">Back to portfolio</Link>
+    </Button>
+  );
 
   if (Number.isNaN(portfolioId)) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-        <h2 className="mb-4 text-2xl font-bold text-red-500">Invalid Portfolio</h2>
-        <p className="text-lg text-gray-200">The provided portfolio ID is invalid.</p>
-        <Button asChild>
-          <a href="/portfolio">Click here to try again</a>
-        </Button>
+        <ErrorState
+          title="Invalid portfolio"
+          description="The provided portfolio ID is invalid."
+          action={retryAction}
+        />
         <PortfolioCookieSetter shouldDelete={true} />
       </div>
     );
@@ -57,11 +64,7 @@ export default async function PortfolioPage({ params }: PortfolioPageProps) {
 
     return (
       <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-        <h2 className="mb-4 text-2xl font-bold text-red-500">Something Went Wrong</h2>
-        <p className="text-lg text-gray-200">{errorMessage}</p>
-        <Button asChild>
-          <a href="/portfolio">Click here to try again</a>
-        </Button>
+        <ErrorState title="Something went wrong" description={errorMessage} action={retryAction} />
         <PortfolioCookieSetter shouldDelete={true} />
       </div>
     );
@@ -75,11 +78,7 @@ export default async function PortfolioPage({ params }: PortfolioPageProps) {
 
     return (
       <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-        <h2 className="mb-4 text-2xl font-bold text-red-500">Something Went Wrong</h2>
-        <p className="text-lg text-gray-200">{errorMessage}</p>
-        <Button asChild>
-          <a href="/portfolio">Click here to try again</a>
-        </Button>
+        <ErrorState title="Something went wrong" description={errorMessage} action={retryAction} />
         <PortfolioCookieSetter shouldDelete={true} />
       </div>
     );
@@ -89,11 +88,7 @@ export default async function PortfolioPage({ params }: PortfolioPageProps) {
   if (!portfoliosList) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-        <h2 className="mb-4 text-2xl font-bold text-red-500">Something Went Wrong</h2>
-        <p className="text-lg text-gray-200">Unable to load portfolios</p>
-        <Button asChild>
-          <a href="/portfolio">Click here to try again</a>
-        </Button>
+        <ErrorState title="Something went wrong" description="Unable to load portfolios" action={retryAction} />
         <PortfolioCookieSetter shouldDelete={true} />
       </div>
     );
@@ -102,14 +97,9 @@ export default async function PortfolioPage({ params }: PortfolioPageProps) {
 
   if (!portfolioInfo) {
     return (
-      <div>
+      <div className="flex h-full flex-col items-center justify-center p-4 text-center">
         <PortfolioCookieSetter shouldDelete={true} />
-        <h2 className="mb-4 text-2xl font-bold text-red-500">Something Went Wrong</h2>
-        <p className="text-lg text-gray-200">Unable to load portfolio</p>
-
-        <Button asChild>
-          <a href="/portfolio">Click here to try again</a>
-        </Button>
+        <ErrorState title="Something went wrong" description="Unable to load portfolio" action={retryAction} />
       </div>
     );
   }
